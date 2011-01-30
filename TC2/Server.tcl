@@ -39,6 +39,7 @@ proc bot:tc2 {sourcebot command text} {
 
 	#Executes command
 	if [proc_exists tc2:command:$cmd] {
+		putcmdlog "(tc2) <$requester@$sourcebot> $cmd $arg"
 		set reply [tc2:command:$cmd $requester $arg]
 	} {
 		set reply {0 "Unknown command: $cmd"}
@@ -49,8 +50,9 @@ proc bot:tc2 {sourcebot command text} {
 	return 1
 }
 
+#checks if a username begins by a letter and contains only letters, digits, -, _ or .
 proc tc2:username_isvalid {username} {
-
+	regexp {^[A-Za-z][A-Za-z0-9_\-\.]*$} $username
 }
 
 proc tc2:username_exists {username} {
@@ -62,6 +64,8 @@ proc tc2:username_exists {username} {
     }
 }
 
+proc tc2:hostname {} {
+	exec hostname -s
 }
 
 #phpfpm reload
@@ -83,7 +87,6 @@ proc tc2:command:phpfpm {requester arg} {
 			catch {exec /usr/local/etc/rc.d/php-fpm status} output
 			set reply 1
 			lappend reply [string map {"\n" " "} $output]
-			putdebug $reply
 			return $reply
 		}
 
@@ -92,10 +95,15 @@ proc tc2:command:phpfpm {requester arg} {
 			if {$user == ""} {
 				return {0 "syntax: phpfpm create <user>"}
 			}
-			if [file exists "/usr/local/etc/php-fpm/$user.conf"] {
-				return {0 "there is already a $user pool"}
+			if ![tc2:username_isvalid $user] {
+				return {0 "not a valid username"}
 			}
-			return {0 "not yet implemented"}
+			if ![tc2:username_exists $user] {
+				return "0 {$user isn't a valid [tc2:hostname] user}"
+			}
+			if [file exists "/usr/local/etc/php-fpm/$user.conf"] {
+				return "0 {there is already a $user pool}"
+			}
 			set port [sql "SELECT MAX(pool_port) FROM tc2_phpfpm_pools]
 			if {$port == ""} {
 				set port 9000
@@ -103,6 +111,12 @@ proc tc2:command:phpfpm {requester arg} {
 				incr port
 			}
 			#string map "%REQUESTER% $requester %TIME% [unixtime] %PORT% $port %USER% $user" $template
+			return {0 "not yet implemented"}
+
+		}
+
+		"" {
+			return {0 "create, status or reload expected"}
 		}
 
 		default {
