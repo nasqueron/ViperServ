@@ -78,7 +78,13 @@ proc sourcetry {file} {
 
 #.tcl with tech.log logging
 proc dcc:tcl {handle idx arg} {
-	catch {log tech $handle $arg}
+	#Logs every .tcl commands, except sql connect
+	#You should add here any line with password.
+	catch {
+		if ![string match "*sql*connect*" $arg] {
+			log tech $handle $arg
+		}
+	}
 	*dcc:tcl $handle $idx $arg
 }
 
