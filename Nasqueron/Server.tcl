@@ -23,13 +23,6 @@
 #     Released under BSD license.
 
 #
-# Configuration
-#
-
-set tc2(bot)		TC2
-set tc2(commands)	{account phpfpm}
-
-#
 # Binds
 #
 
@@ -43,8 +36,7 @@ bind pub  W .php-fpm	 pub:phpfpm
 # Initializes bind and creates procedures for every tc2 commands
 #
 
-proc tc2:initialize {} {
-	global tc2
+proc tc2:addcommand {command} {
 	set proc_tc2_command_dcc {
 		tc2 dcc $idx $handle %COMMAND% $arg
 		return 1
@@ -53,11 +45,16 @@ proc tc2:initialize {} {
 		tc2 pub "$chan $nick" $handle %COMMAND% $text
 		return 1
 	}
-	foreach command $tc2(commands) {
-		bind dcc W $command dcc:$command
-		bind pub W ".$command" pub:$command
-		proc dcc:$command {handle idx arg} [string map "%COMMAND% $command" $proc_tc2_command_dcc]
-		proc pub:$command {nick uhost handle chan text} [string map "%COMMAND% $command" $proc_tc2_command_pub]
+	bind dcc W $command dcc:$command
+	bind pub W ".$command" pub:$command
+	proc dcc:$command {handle idx arg} [string map "%COMMAND% $command" $proc_tc2_command_dcc]
+	proc pub:$command {nick uhost handle chan text} [string map "%COMMAND% $command" $proc_tc2_command_pub]
+
+}
+
+proc tc2:initialize {} {
+	foreach command [registry get tc2.commands]  {
+		tc2:addcommand $command
 	}
 }
 
@@ -80,12 +77,12 @@ proc bot:tc2 {sourcebot command text} {
 }
 
 proc tc2 {bind who handle command arg} {
-	global tc2
-	if ![islinked $tc2(bot)] {
-		tc2:reply $bind $who "$tc2(bot) isn't linked"
+	set bot [registry get tc2.bot]
+	if ![islinked $bot] {
+		tc2:reply $bind $who "$bot isn't linked"
 		return
 	}
-	putbot $tc2(bot) "tc2 [dict create requester $handle command $command arg $arg bind $bind who $who]"
+	putbot $bot "tc2 [dict create requester $handle command $command arg $arg bind $bind who $who]"
 }
 
 proc tc2:reply {bind who message} {

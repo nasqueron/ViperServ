@@ -17,15 +17,48 @@ proc isnumber {v} {
 }
 
 #
-# MySQL
+# Registry
 #
-#Gets the value of the key $key from the registry 
-proc registry_get {key} {
-	sql "SELECT value FROM registry WHERE `key` = '$key'" 
-}
 
-#Sets the key $key to $value in the registry
-proc registry_set {key value} {
+#Gets, sets, deletes or increments a registry value 
+proc registry {command key {value ""}} {
+	switch -- $command {
+		"add" {
+			sqladd registry "data value" [list $key $value]
+		}
+
+		"get" {
+			sqlscalar "SELECT value FROM registry WHERE `data` = '$key'" 
+		}
+
+		"set" {
+			sqlreplace registry "data value" [list $key $value]
+		}
+
+		"del" {
+			registry delete $key $value
+		}
+
+		"delete" {
+			set sql "DELETE FROM registry WHERE `data` = '$key'"
+			putdebug $sql
+			sql $sql
+		}
+
+		"incr" {
+			set current [registy get $key]
+			if {$value == ""} {set term 1}
+			if {$current == ""} {
+				registry set $key $term
+			} {
+				registry set $key [incr current $term]
+			}
+		}
+
+		default {
+			error "unknown subcommand: must be add, get, set, incr or delete"
+		}
+	}
 }
 
 #
