@@ -22,23 +22,50 @@
 #     (c) 2011 Sébastien Santoro aka Dereckson.
 #     Released under BSD license.
 
-bind dcc  W  phpfpm	 dcc:phpfpm
-bind dcc  W  php-fpm	 dcc:phpfpm
-bind pub  W .phpfpm	 pub:phpfpm
-bind pub  W .php-fpm	 pub:phpfpm
+#
+# Configuration
+#
+
+set tc2(bot)		TC2
+set tc2(commands)	{account phpfpm}
+
+#
+# Binds
+#
+
 bind bot  -  tc2	 bot:tc2
 
-set tc2(bot)	TC2
+#Commands aliases only, main commands are handled by tc2:initialize
+bind dcc  W  php-fpm	 dcc:phpfpm
+bind pub  W .php-fpm	 pub:phpfpm
 
-proc dcc:phpfpm {handle idx arg} {
-	tc2 dcc $idx $handle phpfpm $arg
-	return 1
+#
+# Initializes bind and creates procedures for every tc2 commands
+#
+
+proc tc2:initialize {} {
+	global tc2
+	set proc_tc2_command_dcc {
+		tc2 dcc $idx $handle %COMMAND% $arg
+		return 1
+	}
+	set proc_tc2_command_pub {
+		tc2 pub "$chan $nick" $handle %COMMAND% $text
+		return 1
+	}
+	foreach command $tc2(commands) {
+		bind dcc W $command dcc:$command
+		bind pub W ".$command" pub:$command
+		proc dcc:$command {handle idx arg} [string map "%COMMAND% $command" $proc_tc2_command_dcc]
+		proc pub:$command {nick uhost handle chan text} [string map "%COMMAND% $command" $proc_tc2_command_pub]
+	}
 }
 
-proc pub:phpfpm {nick uhost handle chan text} {
-	tc2 pub "$chan $nick" $handle phpfpm $text
-	return 1
-}
+tc2:initialize
+
+#
+# TC2 clients procdures
+#
 
 proc bot:tc2 {sourcebot command text} {
 	if [catch {

@@ -202,6 +202,8 @@ proc dcc:sql  {handle idx arg} [string map "sql1 sql" [info body dcc:sql1]]
 proc dcc:sql? {handle idx arg} [string map "sql1 sql" [info body dcc:sql1?]]
 proc dcc:sql! {handle idx arg} [string map "sql1 sql" [info body dcc:sql1!]]
 
+proc sqlreplace {table {data1 ""} {data2 ""}} [string map {"INSERT INTO" "REPLACE INTO"} [info body sqladd]]
+
 #Clones .sql1, .sql1? and .sql1! commands into .sql2, .sql3, ..., .sql10.
 for {set i 2} {$i < 11} {incr i} {
 	bind dcc T sql$i dcc:sql$i

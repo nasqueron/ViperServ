@@ -27,3 +27,21 @@ proc registry_get {key} {
 #Sets the key $key to $value in the registry
 proc registry_set {key value} {
 }
+
+#
+# Users information
+#
+proc getuserid {data} {
+	if {$data == ""} {
+		return
+	} elseif {![isnumber $data]} {
+		#username -> user_id
+		sql "SELECT user_id FROM users WHERE username = '[sqlescape $data]'"
+	} elseif {$data < 1000} {
+		#idx -> user_id
+		getuserid [idx2hand $data]
+	} else {
+		#user_id -> user_id (or "" if not existing)
+		sql "SELECT user_id FROM users WHERE user_id = $data"
+	}
+}
