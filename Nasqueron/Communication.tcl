@@ -29,6 +29,7 @@ proc dcc:sms {handle idx arg} {
 # Identi.ca
 #
 
+#Posts $message on the identi.ca $account account
 proc identicapost {account message} {
 	set row [lindex [sql "SELECT account_username, account_password FROM identica_accounts WHERE account_code = '$account'"] 0]
 	set auth "Basic [base64::encode [join $row :]]"
@@ -36,10 +37,12 @@ proc identicapost {account message} {
 	::http::cleanup $tok
 }
 
+#.identica
 proc dcc:identica {handle idx arg} {
 	
 }
 
+#!pub !identica or !twit
 proc pub:identica {nick uhost handle chan text} {
 	if {$chan == "#wikipedia-fr"} {
 		set account wikipediafr

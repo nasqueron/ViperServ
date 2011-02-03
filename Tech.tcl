@@ -92,59 +92,6 @@ proc dcc:tcl {handle idx arg} {
 # SQL
 #
 
-#TODO: move to Core.tcl
-proc sqlrehash {} {
-	global sql
-	catch {
-		sql  disconnect
-		sql2 disconnect
-	}
-	sql  connect  $sql(host) $sql(user) $sql(pass)
-	sql2 connect  $sql(host) $sql(user) $sql(pass)
-	sql  selectdb $sql(database)
-	sql2 selectdb $sql(database)
-}
-
-#Escape a string to use as sql query parameter
-proc sqlescape {data} {
-	#\ -> \\
-	#' -> \'
-	string map {"\\" "\\\\" "'" "\\'"} $data
-	
-}
-
-#Gets the first item of the first row of a sql query (scalar results)
-proc sqlscalar {sql} {
-	lindex [lindex [sql $sql] 0] 0 
-}
-
-#Adds specified data to specified SQL table
-proc sqladd {table {data1 ""} {data2 ""}} {
-	if {$data1 == ""} {
-		set fields ""
-		#Prints field to fill
-		foreach row [sql "SHOW COLUMNS FROM $table"] {
-			lappend fields [lindex $row 0]
-		}
-		return $fields
-	}
-
-	if {$data2 == ""} {
-		set sql "INSERT INTO $table VALUES ("
-		set data $data1
-	} {
-		set sql "INSERT INTO $table (`[join $data1 "`, `"]`) VALUES ("
-		set data $data2
-	}
-	set first 1
-	foreach value $data {
-		if {$first == 1} {set first 0} {append sql ", "}
-		append sql "'[sqlescape $value]'"
-	}
-	append sql ")"
-	sql $sql
-}
-
 #Reconnects to the MySQL main server (sql and sql2)
 proc dcc:sqlrehash {handle idx arg} {
 	sqlrehash
