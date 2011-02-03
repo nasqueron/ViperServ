@@ -152,6 +152,46 @@ proc tc2:createaccount {username group} {
 	}
 }
 
+#Checks if $username begins by a letter and contains only letters, digits, -, _ or .
+proc tc2:isdomain {domain} {
+	regexp "^\[a-z0-9A-Z\]\[a-z0-9A-Z\\-.\]*\[a-z0-9A-Z\]$" $domain
+}
+
+proc tc2:cutdomain {domain} {
+	#a.b.hostname	a.b	hostname
+	#a.tld			a.tld
+	#a.b.tld	a	b.tld
+	set items [split $domain .]
+	if {[llength $items] < 3} {
+		list "" $domain
+	} elseif {[llength $items] == 3} {
+		list [lindex $items 0] [join [lrange $items 1 end] .]
+	} {
+		set hostname [exec hostname -f]
+		set k [expr [llength $hostname] + 1]
+		if {[lrange $items end-$k end] == [split $hostname .]} {
+			list [join [lrange $items 0 $k] .] $hostname
+		} {
+			list [join [lrange $items 0 end-2] .] [join [lrange $items end-1 end] .]
+		}
+	}
+}
+
+#Determines if $username is a valid MySQL user
+proc tc2:mysql_user_exists {username} {
+	sql7 "SELECT count(*) FROM mysql.user WHERE user = '[sqlescape $username]'"
+}
+
+#Gets the host matching the first $username MySQL user
+proc tc2:mysql_get_host {username} {
+	sql7 "SELECT host FROM mysql.user WHERE user = '[sqlescape $username]' LIMIT 1"
+}
+
+#Gets a temporary password
+proc tc2:randpass {} {
+	encrypt [rand 99999999] [rand 99999999]
+}
+
 #
 # tc2 commands
 #
@@ -347,6 +387,121 @@ proc tc2:command:account {requester arg} {
 	}
 }
 
+#.mysql create database [username]
+proc tc2:command:mysql {requester arg} {
+	switch -- [set command [lindex $arg 0]] {
+		"create" {
+			set database [lindex $arg 1]
+			set username [lindex $arg 2]
+			if ![tc2:username_isvalid $database] {
+				list 0 "Invalid database name: $database"
+			} elseif [file exists [registry get nginx.[tc2:hostname].mysql.datadir]/$database] {
+				list 1 "database $database already exists"
+			} elseif {$username == ""} {
+				if {[tc2:username_exists $database] || [tc2:mysql_user_exists $database]} {
+					tc2:command:mysql $requester [list create $database $database]
+				} {
+					#Ok, create the database and a new user with same login than db and random password
+					set password [tc2:randpass]
+					if [catch {
+						sql7 "CREATE DATABASE $database"
+						sql7 "GRANT ALL PRIVILEGES ON $database.* TO '$database'@'localhost' IDENTIFIED BY '$password'"
+					} err] {
+						list 0 $err
+					} {
+						list 1 "database created, with rights granted to user $database, with $password as temporary password"
+					}
+				}
+			} {
+				if {![tc2:username_isvalid $username]} {
+					list 0 "Invalid username: $username"
+				}
+				if {[tc2:isroot $requester] || [tc2:userallow $requester $username]} {
+					if [catch {
+						set host [tc2:mysql_get_host $username]
+						sql7 "CREATE DATABASE $database"
+						sql7 "GRANT ALL PRIVILEGES ON $database.* TO '$username'@'$host'"
+					} err] {
+						list 0 $err
+					} {
+						list 1 "database $database created, with rights granted to $username@$host"
+					}
+				} {
+					[list 0 "You aren't root nor have authority on $username"
+				}
+			}
+		}
+
+		default {
+			list 0 "try .mysql create <database> \[username\]"
+		}
+	}
+}
+
+#.nginx reload
+#.nginx status
+#.nginx server add <domain> [directory] [+php]
+#.nginx server edit <domain> <new directory>
+#.nginx server edit <domain> <-php|+php>
+proc tc2:command:nginx {requester arg} {
+	switch -- [set command [lindex $arg 0]] {
+		"reload" {
+			#if [catch {exec /usr/local/etc/rc.d/nginx reload} output] {
+			#}
+			if [catch {exec /usr/local/tmp-nginx/sbin/nginx -s reload} output] {
+				return [list 0 $output]
+			} {
+				return {1 "ok, tmp-nginx reloaded"}
+			}
+		}
+
+		"status" {
+			set conn [exec sockstat | grep nginx | grep -c tcp]
+			if {$conn == 0} {
+				return {1 "nginx not running"}
+			} {
+				return "1 {$conn connection[s $conn]}"
+			}
+			return $reply
+		}
+
+		"create" {
+			tc2:command:nginx server add [lrange $arg 1 end]
+		}
+
+		"server" {
+			#.nginx
+			set subcommand [lindex $arg 2]
+			set domain [lindex $arg 3]
+			if {$subcommand != "" || $domain != ""} {
+				foreach "subdomain domain" [tc2:cutdomain $domain] {}
+				set config "[registry get tc2.[tc2:hostname].nginx.vhostsdir]/$domain.conf"
+				switch $subcommand {
+					add {
+						
+					}
+					edit {
+						return [list 1 "edit $config"]
+					}
+				}
+			}
+			return {0 "usage: .nginx server add/edit domain \[options\]"}
+		}
+
+		"" {
+			return {0 "server add, server edit, status or reload expected"}
+		}
+
+		default {
+			set reply 0
+			lappend reply "unknown command: $command"
+		}
+			
+		
+	}
+
+}
+
 #phpfpm reload
 #phpfpm status
 #phpfpm create <user>
@@ -356,7 +511,15 @@ proc tc2:command:phpfpm {requester arg} {
 	switch $command {
 		"reload" {
 			if [catch {exec /usr/local/etc/rc.d/php-fpm reload} output] {
-				return {0 $output}
+				list 0 [string map {"\n" " "} $output]
+			} {
+				return {1 "ok, php-fpm reloaded"}
+			}
+		}
+
+		"restart" {
+			if [catch {exec /usr/local/etc/rc.d/php-fpm restart} output] {
+				list 0 [string map {"\n" " "} $output]
 			} {
 				return {1 "ok, php-fpm reloaded"}
 			}
@@ -364,9 +527,7 @@ proc tc2:command:phpfpm {requester arg} {
 
 		"status" {
 			catch {exec /usr/local/etc/rc.d/php-fpm status} output
-			set reply 1
-			lappend reply [string map {"\n" " "} $output]
-			return $reply
+			list 1 [string map {"\n" " "} $output]
 		}
 
 		"create" {
