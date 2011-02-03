@@ -172,3 +172,15 @@ proc geturls {text} {
 		concat [string range $text $pos $pos2-1] [geturls [string range $text $pos2+1 end]]
 	}
 }
+
+proc geturltext {url {trim 1}} {
+	package require http
+	set fd [http::geturl $url]
+	set text [http::data $fd]
+	http::cleanup $fd
+	if $trim {
+		string trim $text
+	} {
+		return $text
+	}
+}

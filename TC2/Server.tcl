@@ -192,6 +192,25 @@ proc tc2:randpass {} {
 	encrypt [rand 99999999] [rand 99999999]
 }
 
+#Adds the SSH key $key to the $username account
+proc tc2:sshaddkey {username key} {
+	set sshdir "/home/$username/.ssh"
+	set keysfile "$sshdir/authorized_keys"
+	if ![file exists $sshdir] {
+		exec -- mkdir -p -m 0700 $sshdir
+		exec chown $username $sshdir
+	}
+	if ![file isdirectory $sshdir] {
+		return 0
+	}
+	set fd [open $keysfile a]
+	puts $fd $key
+	close $fd
+	exec chmod 600 $keysfile
+	exec chown $username $keysfile
+	return 1
+}
+
 #
 # tc2 commands
 #
@@ -199,6 +218,7 @@ proc tc2:randpass {} {
 #account permission
 #account isroot
 #account exists
+#account create <username> <group> [SSH public key url]
 proc tc2:command:account {requester arg} {
 	set command [lindex $arg 0]
 	switch -- $command {
@@ -364,7 +384,7 @@ proc tc2:command:account {requester arg} {
 
 			#Checks group
 			set group [lindex $arg 2]
-			set validgroups [registry get tc2.grip.usergroups]
+			set validgroups [registry get tc2.[tc2:hostname].usergroups]
 			if {$group == ""} {
 				return "0 {In which group? Must be amongst $validgroups.}"
 			}
@@ -372,7 +392,18 @@ proc tc2:command:account {requester arg} {
 				return "0 {$group isn't a valid group, must be among $validgroups}"
 			}
 
-			#Create user
+			#Checks public key URL
+			if {[set url [geturls [lindex $arg 3]]] != ""} {
+				set password [tc2:createaccount $username $group]
+				set key [geturltext $url]
+				if {$key != "" && [tc2:sshaddkey $username $key]} {
+					return [list 1 "accounr created"]
+				} {
+					return [list 1 "account created but can't install SSH key ; you can use the password $password"]
+				}
+			}
+
+			#Creates user
 			list 1 [tc2:createaccount $username $group]
 		}
 
