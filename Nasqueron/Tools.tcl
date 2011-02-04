@@ -1,8 +1,9 @@
 # Collection of tools and gadgets, to boost
 # your productivity or to have fun.
 
-bind dcc - genpass dcc:genpass
-bind dcc - strlen  dcc:strlen
+bind dcc - genpass   dcc:genpass
+bind dcc - strlen    dcc:strlen
+bind dcc - unixtime  dcc:unixtime
 
 #
 # .genpass <master password> <domain name>
@@ -32,4 +33,21 @@ proc dcc:strlen {handle idx arg} {
 	putdcc $idx [string length $arg]
 	putcmdlog "#$handle# strlen ..."
 	return 0
+}
+
+#
+# .unixtime [value]
+# Display current unixtime, convert a unixtime to a date or get specified date's unixtime
+#
+
+proc dcc:unixtime {handle idx arg} {
+	if {$arg == ""} {
+		putdcc $idx [unixtime]
+	} elseif [isnumber $arg] {
+		putdcc $idx [clock format $arg -format "%Y-%m-%d %H:%M:%S"]
+	} {
+		if [catch {putdcc $idx [clock scan $arg]} err] {
+			putdcc $idx $err
+		}
+	}
 }
