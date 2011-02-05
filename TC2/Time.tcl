@@ -30,7 +30,7 @@ proc cron:often {minute hour day month weekday} {
 
 	#Sends a dummy command to keep sql7 alive
 	if [catch {
-		sql7 "SELECT 666;
+		sql7 "SELECT 666"
 	}] {
 		putcmdlog "Warning: not connected to sql7 - mysql won't work."
 	}
