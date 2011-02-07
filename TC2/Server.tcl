@@ -407,7 +407,7 @@ proc tc2:command:account {requester arg} {
 				set password [tc2:createaccount $username $group]
 				set key [geturltext $url]
 				if {$key != "" && [tc2:sshaddkey $username $key]} {
-					return [list 1 "accounr created"]
+					return [list 1 "account created"]
 				} {
 					return [list 1 "account created but can't install SSH key ; you can use the password $password"]
 				}
