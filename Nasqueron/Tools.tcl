@@ -11,7 +11,7 @@ bind dcc - unixtime  dcc:unixtime
 #
 
 proc genpass {master domain} {
-	string range [md5 "$master:$domain"] 0 8
+	string range [md5 "$master:$domain"] 0 7
 }
 
 proc dcc:genpass {handle idx arg} {
