@@ -133,6 +133,8 @@ proc pub:sms {nick uhost handle chan text} {
 
 #Posts $message on the identi.ca $account account
 proc identicapost {account message} {
+	package require http
+	package require base64
 	set row [lindex [sql "SELECT account_username, account_password FROM identica_accounts WHERE account_code = '$account'"] 0]
 	set auth "Basic [base64::encode [join $row :]]"
 	set tok [::http::geturl http://identi.ca/api/statuses/update.xml -headers [list Authorization $auth] -query [::http::formatQuery status $message]]

@@ -24,6 +24,26 @@ proc s {count} {
 }
 
 #
+# Strings
+#
+
+#Completes $text by spaces or $char so the returned text length is $len
+proc completestring {text len {char " "}} {
+	set curlen [string length $text]
+	if {$curlen >= $len} {
+		return $text
+	}
+	if {[string length $char] < 2} {
+		append text [string repeat $char [expr $len - $curlen]]
+	} {
+		while {[string length $text] < $len} {
+			append text $char
+		}
+		string range $text 0 $len+1
+	}
+}
+
+#
 # SQL
 #
 
