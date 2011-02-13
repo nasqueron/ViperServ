@@ -487,12 +487,14 @@ proc tc2:command:mysql {requester arg} {
 proc tc2:command:nginx {requester arg} {
 	switch -- [set command [lindex $arg 0]] {
 		"reload" {
-			#if [catch {exec /usr/local/etc/rc.d/nginx reload} output] {
-			#}
-			if [catch {exec /usr/local/tmp-nginx/sbin/nginx -s reload} output] {
-				return [list 0 $output]
+			if [catch {exec /usr/local/etc/rc.d/nginx reload} output] {
+				if {[string first "is successful" $output] == -1} {
+					return [list 0 $output]
+				} {
+					return {1 "ok, nginx reloaded"}
+				}
 			} {
-				return {1 "ok, tmp-nginx reloaded"}
+				return {1 "ok, nginx reloaded"}
 			}
 		}
 
