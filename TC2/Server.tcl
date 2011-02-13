@@ -439,7 +439,7 @@ proc tc2:command:mysql {requester arg} {
 			} elseif [file exists [registry get tc2.[tc2:hostname].mysql.datadir]/$database] {
 				list 1 "database $database already exists"
 			} elseif {$username == ""} {
-				if {[tc2:username_exists $database] || [tc2:mysql_user_exists $database]} {
+				if {[tc2:mysql_user_exists $database]} {
 					tc2:command:mysql $requester [list create $database $database]
 				} {
 					#Ok, create the database and a new user with same login than db and random password
