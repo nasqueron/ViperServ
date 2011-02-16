@@ -509,7 +509,7 @@ proc tc2:command:nginx {requester arg} {
 		}
 
 		"create" {
-			tc2:command:nginx server add [lrange $arg 1 end]
+			tc2:command:nginx $requester [list server add {*}[lrange $arg 1 end]]
 		}
 
 		"server" {		
