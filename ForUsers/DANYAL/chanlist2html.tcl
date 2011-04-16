@@ -17,8 +17,8 @@ set chanlist2html(file) users.html
 #Remplace the list code by %%chanlist%%
 set chanlist2html(tmpl) users.tmpl
 
-#The cron interval to regenerate the page
-set chanlist2html(cron) "*/5 * * * *"
+#The interval to regenerate the page in minutes
+set chanlist2html(time) 5
 
 #
 # Helper procs
@@ -52,12 +52,13 @@ proc chanlist2html_write {channel template target} {
 }
 
 #
-# Events code
+# Timer
 # 
 
-bind cron - $chanlist2html(cron) cron:chanlist2html
-
-proc cron:chanlist2html {minute hour day weekday year} {
+proc chanlist2html {} {
 	global chanlist2html
-	chanlist2html_write $chanlist2html(channel) $chanlist2html(tmpl) $chanlist2html(file) 
+	chanlist2html_write $chanlist2html(channel) $chanlist2html(tmpl) $chanlist2html(file)
+	timer $chanlist2html(time) chanlist2html
 }
+
+chanlist2html
