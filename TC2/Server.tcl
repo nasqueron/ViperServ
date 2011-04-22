@@ -362,7 +362,7 @@ proc tc2:command:account {requester arg} {
 				}
 
 				default {
-					list 0 "expected: add <username>, del <username>, exists, +root, -root, or nothing"
+					list 0 "expected: add <username>, del <username>, +root, -root, or nothing"
 				}
 			}
 		}
