@@ -5,6 +5,7 @@
 #
 # Configuration
 # 
+set MediaWikiRC(source) 127.0.0.1
 set MediaWikiRC(port) 8675
 set MediaWikiRC(channel) #wolfplex
 set MediaWikiRC(color) 0
@@ -18,12 +19,15 @@ proc mediawiki_rc_udp_event_handler {sock} {
     global MediaWikiRC
     set pkt [read $sock]
     set peer [fconfigure $sock -peer]
-    #TODO check if peer is 127.0.0.1 if there is somme flood
-    #putdebug "$peer: [string length $pkt] {$pkt}"
-    if $MediaWikiRC(color) {
-         puthelp "PRIVMSG $MediaWikiRC(channel) :$pkt"
+    #Check if peer is source IP to avoid flood
+    if {[string range $peer 0 [string length $MediaWikiRC(source)]-1] == $MediaWikiRC(source)} {
+        if $MediaWikiRC(color) {
+            puthelp "PRIVMSG $MediaWikiRC(channel) :$pkt"
+        } {
+            puthelp "PRIVMSG $MediaWikiRC(channel) :[stripcodes abcgru $pkt]"
+        }
     } {
-         puthelp "PRIVMSG $MediaWikiRC(channel) :[stripcodes abcgru $pkt]"
+            putdebug "$peer: [string length $pkt] {$pkt}"
     }
     return
 }
