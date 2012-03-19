@@ -172,7 +172,7 @@ proc getuserid {data} {
 proc geturls {text} {
 	#Finds the first url position
 	set pos -1
-	foreach needle "http:// https:// www." {
+	foreach needle "http:// https:// www. youtu.be" {
 		set pos1 [string first $needle $text]
 		if {$pos1 != -1 && ($pos == -1 || $pos1 < $pos)} {
 			set pos $pos1
