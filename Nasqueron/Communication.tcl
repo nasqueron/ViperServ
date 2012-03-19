@@ -5,6 +5,8 @@ bind pub  - !sms        pub:sms
 bind pub  - !identica	pub:identica
 bind pub  - !pub	pub:identica
 bind pub  - !twit	pub:identica
+bind pub  - !idee	pub:idee
+bind pub  - !idees	pub:idee
 
 #
 # SMS
@@ -138,6 +140,7 @@ proc identicapost {account message} {
 	set row [lindex [sql "SELECT account_username, account_password FROM identica_accounts WHERE account_code = '$account'"] 0]
 	set auth "Basic [base64::encode [join $row :]]"
 	set tok [::http::geturl http://identi.ca/api/statuses/update.xml -headers [list Authorization $auth] -query [::http::formatQuery status $message]]
+	#putdebug [::http::data $tok]
 	::http::cleanup $tok
 }
 
@@ -146,16 +149,26 @@ proc dcc:identica {handle idx arg} {
 	
 }
 
+#!idee
+proc pub:idee {nick uhost handle chan text} {
+	identicapublish ideedarticles $nick $text
+}
+
 #!pub !identica or !twit
+#The account is channel dependant
 proc pub:identica {nick uhost handle chan text} {
 	if {$chan == "#wikipedia-fr"} {
 		set account wikipediafr
 	} elseif {$chan == "#wolfplex"} {
 		set account wolfplex
 	} {
-		putquick "NOTICE $nick :!pub n'est pas activ√©sur $chan"
+		putquick "NOTICE $nick :!pub n'est pas activ√ ©sur $chan"
 		return
 	}
+	identicapublish $account $nick $text
+}
+
+proc identicapublish {account nick text} {
 	if {$text == ""} {
 		putquick "NOTICE $nick :Syntaxe : !pub <texte √† publier sur identi.ca et Twitter>"
 		return
