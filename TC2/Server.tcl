@@ -402,18 +402,27 @@ proc tc2:command:account {requester arg} {
 				return "0 {$group isn't a valid group, must be among $validgroups}"
 			}
 
-			#Checks public key URL
+			#Checks public key URL. If so, creates user with SSH key and random password.
 			if {[set url [geturls [lindex $arg 3]]] != ""} {
 				set password [tc2:createaccount $username $group]
-				set key [geturltext $url]
-				if {$key != "" && [tc2:sshaddkey $username $key]} {
+				set keyAdded 0
+				if {[catch {
+					set key [geturltext $url]
+					if {$key != ""} {
+						set keyAdded [tc2:sshaddkey $username $key]
+					}
+				}]} {
+					putdebug "An error occured adding the SSH key."
+					set keyAdded 0
+				}
+				if {$keyAdded} {
 					return [list 1 "account created"]
 				} {
 					return [list 1 "account created but can't install SSH key ; you can use the password $password"]
 				}
 			}
 
-			#Creates user
+			#Creates user without SSH key.
 			list 1 [tc2:createaccount $username $group]
 		}
 
