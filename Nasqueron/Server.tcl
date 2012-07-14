@@ -61,7 +61,7 @@ proc tc2:initialize {} {
 tc2:initialize
 
 #
-# TC2 clients procdures
+# TC2 client procedures
 #
 
 proc bot:tc2 {sourcebot command text} {
