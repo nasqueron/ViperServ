@@ -213,7 +213,8 @@ proc tc2:sshaddkey {username key} {
 
 #Guesses web user from requester or domain
 proc tc2:guesswebuser {requester domain} {
-	foreach candidate [list $domain [string tolower $domain] $requester [string tolower $requester]] {
+	set alphanumdomain [regsub -all {([^[:alnum:]])} [string range $domain 0 [string last . $domain]-1] ""]
+	foreach candidate [list $domain [string tolower $domain] $alphanumdomain  $requester [string tolower $requester]] {
 		if {[tc2:username_isvalid $candidate] && [tc2:username_exists $candidate]} {
 			return $candidate
 		}
@@ -696,6 +697,41 @@ proc tc2:command:phpfpm {requester arg} {
 
 		"" {
 			return {0 "create, status or reload expected"}
+		}
+
+		default {
+			set reply 0
+			lappend reply "unknown command: $command"
+		}
+	}
+}
+
+#ci status
+#ci stop
+proc tc2:command:ci {requester arg} {
+	set command [lindex $arg 0]
+
+	switch $command {
+		"start {
+			list 0 [string range "use /usr/local/etc/rc.d/jenkins onestart" 0 end]
+		}
+
+		"status" {
+			catch {exec /usr/local/etc/rc.d/jenkins onestatus} status
+			list 1 [string range $status 0 [string first . $status]]
+		}
+
+		"stop" {
+			#Jenkins doesn't reply to stop signal on the server, so we kill it.
+			if [catch {exec -- kill -9 [exec cat /var/run/jenkins/jenkins.pid]} output] {
+				list 0 [string map {"\n" " "} $output]
+			} {
+				return {1 "ok, Jenkins stopped"}
+			}
+		}
+
+		"" {
+			return {0 "status or stop expected"}
 		}
 
 		default {
