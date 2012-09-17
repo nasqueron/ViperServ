@@ -20,12 +20,7 @@ proc raw:logjoin {from keyword text} {
 		set pos [string first "Client connecting" $text]
 		if {$pos > -1} {
 			log_entry $LogJoins(file) [string range $text $pos end]
-			putdebug "°°° Notice logged"
-		} {
-			putdebug "°°° Notice discarded (not connect)"
 		}
-	} {
-		putdebug "°°° Notice discarded (bad from/keyword : $from $keyword)"
 	}
 }
 
