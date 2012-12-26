@@ -1,6 +1,7 @@
 bind dcc  -  antidater	 dcc:antidater
 bind dcc  -  postdater	 dcc:postdater
 bind dcc  -  days	 dcc:days
+bind dcc  -  quux        dcc:quux
 
 #
 # Dates calculation
@@ -69,4 +70,27 @@ proc dcc:postdater {handle idx arg} {
 	}
 	putdcc $idx [clock format [postdater $days $date] -format "%Y-%m-%d"]
 	return 1
+}
+
+proc quux {userid category content {tags ""}} {
+	global username
+	lappend tags client:$username
+	sqladd quux "user_id quux_date quux_category quux_content quux_tags" [list $userid [unixtime] $category $content $tags]
+}
+
+proc dcc:quux {handle idx arg} {
+	switch [llength $arg] {
+		0 {
+			putdcc $idx "Quuxons !"
+		}
+		1 {
+			putdcc $idx "Usage: .quux <category> <content>"
+		}
+		default {
+			set category [lindex $arg 0]
+			set content [string range $arg [string length $category]+1 end]
+			quux [getuserid $idx] $category $content
+			putcmdlog "#$handle# quux ..."
+		}
+	}
 }
