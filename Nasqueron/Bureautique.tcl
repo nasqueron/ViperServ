@@ -81,7 +81,8 @@ proc quux {userid category content {tags ""}} {
 proc dcc:quux {handle idx arg} {
 	switch [llength $arg] {
 		0 {
-			putdcc $idx "Quuxons !"
+			#To move to .quux -topics?
+			putdcc $idx [sql "SELECT DISTINCT quux_category FROM quux WHERE user_id = [getuserid $idx]"]
 		}
 		1 {
 			putdcc $idx "Usage: .quux <category> <content>"
