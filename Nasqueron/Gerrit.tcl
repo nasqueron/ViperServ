@@ -63,12 +63,49 @@ namespace eval ::ssh:: {
 			if {$pid == $current_pid} { return $command }
 		}
 	}
+
+	# Gets appropriate connection parameter
+	#
+	# @param $server The server to connect
+	# @return The server domain name, prepent by SSH options
+	proc get_connection_parameter {server} {
+		#TODO: return -p 29418 username@review.anothersite.com when appropriate instead to create SSH config alias
+		return $server
+	}
 }
 
 namespace eval ::gerrit:: {
 	## Queries a Gerrit server
-	proc query {query} {
-		exec ssh wmreview gerrit query $query
+	##
+	## @param $query The query to send
+	## @seealso http://gerrit-documentation.googlecode.com/svn/Documentation/2.5/cmd-query.html
+	proc query {server query} {
+		exec -- ssh [ssh::get_connection_parameter $server] gerrit query $query
+	}
+
+	## Launches a socket to monitor Gerrit events in real time and initializes events.
+	## This uses a node gateway.
+	##
+	## @seealso http://gerrit-documentation.googlecode.com/svn/Documentation/2.5/cmd-stream-events.html
+	proc setup_stream_events {server} {
+		control [connect [registry get gerrit.$server.streamevents.host] [registry get gerrit.$server.streamevents.port]] gerrit::listen:stream_event
+	}
+
+	proc listen:stream_event {idx text} {
+		global buffers
+
+		if {$text == ""} {
+			putdebug "Connection to Gerrit stream-events gateway closed."
+			if [info exists buffers($idx)] { unset buffers($idx) }
+		} elseif {$text == "--"} {
+			# Process gerrit event
+			set event [json::json2dict $buffers($idx)]
+			set buffers($idx) ""
+			registry incr gerrit.stats.type.[dict get $event type]
+		} {
+			append buffers($idx) $text
+		}
+		return 0		
 	}
 }
 
@@ -83,7 +120,8 @@ proc dcc:gerrit {handle idx arg} {
 	}
 
 	# TODO: support several Gerrit servers
-	putdcc $idx [gerrit::query $arg]
+	set server [registry get gerrit.defaultserver]
+	putdcc $idx [gerrit::query $server $arg]
 	return 1
 }
 
