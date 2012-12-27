@@ -130,7 +130,7 @@ proc registry {command key {value ""}} {
 		}
 
 		"incr" {
-			set current [registy get $key]
+			set current [registry get $key]
 			if {$value == ""} {set term 1}
 			if {$current == ""} {
 				registry set $key $term
