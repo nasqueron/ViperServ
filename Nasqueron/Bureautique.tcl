@@ -72,26 +72,109 @@ proc dcc:postdater {handle idx arg} {
 	return 1
 }
 
-proc quux {userid category content {tags ""}} {
-	global username
-	lappend tags client:$username
-	sqladd quux "user_id quux_date quux_category quux_content quux_tags" [list $userid [unixtime] $category $content $tags]
+namespace eval ::quux:: {
+	## Adds a quux
+	##
+	## @param $userid The user id
+	## @param $category The quux category
+	## @param $content The quux content
+	## @param $tags The quux tags [optional]
+	proc add {userid category content {tags ""}} {
+		global username
+		lappend tags client:$username
+		sqladd quux "user_id quux_date quux_category quux_content quux_tags" [list $userid [unixtime] $category $content $tags]
+	}
+
+	## Tags a quux
+	##
+	## @param $id The quux id
+	## @param $tags The tags to add
+	proc tag {id tags} {
+		if {![isnumber $id]} { error "bad id \"$id\": must be integer" }
+		switch [sql "SELECT LENGTH(quux_tags) FROM quux WHERE quux_id = $id"] {
+			""	{ error "Not existing quux: $id" }
+			0	{ set value '[sqlescape $tags]' }
+			default	{ set value "CONCAT(quux_tags, ' ', '[sqlescape $tags]')" }
+		}
+		sql "UPDATE quux SET quux_tags = $value WHERE quux_id = $id"
+	}
+
+	## Determines if the specified user is the quux's owner
+	## 
+	## @param $id The quux id
+	## @param $userid The user id
+	## @return 1 if the quux exists and added by the specified user; otherwise, 0
+	proc isauthor {id userid} {
+		if {![isnumber $id]} { error "bad id \"$id\": must be integer" }
+		if {![isnumber $userid]} { error "bad userid \"$userid\": must be integer" }		
+		sql "SELECT count(*) FROM quux WHERE quux_id = $id AND user_id = $userid"
+	}
 }
 
 proc dcc:quux {handle idx arg} {
-	switch [llength $arg] {
-		0 {
-			#To move to .quux -topics?
-			putdcc $idx [sql "SELECT DISTINCT quux_category FROM quux WHERE user_id = [getuserid $idx]"]
-		}
-		1 {
-			putdcc $idx "Usage: .quux <category> <content>"
-		}
-		default {
-			set category [lindex $arg 0]
-			set content [string range $arg [string length $category]+1 end]
-			quux [getuserid $idx] $category $content
-			putcmdlog "#$handle# quux ..."
+	#â‚#.quux
+	if {[llength $arg] == 0} {
+		#Prints categories
+		putdcc $idx [sql "SELECT DISTINCT quux_category FROM quux WHERE user_id = [getuserid $idx] AND quux_deleted = 0"]
+		return 1
+	}
+
+	#.quux <command>
+	set command [lindex $arg 0]
+	switch $command {
+		"tag" {
+			#.quux tag <quux id> <tag to add>
+
+			set id [lindex $arg 1]
+			set content [string range $arg [string length $id]+5 end]
+
+			if {![isnumber $id]} {
+				putdcc $idx "Not a number."
+			} elseif {![quux::isauthor $id [getuserid $idx]]} {
+				putdcc $idx "Not your quux."
+			} {
+				quux::tag $id $content
+				putcmdlog "#$handle# quux tag ..."
+			}
+			return 0
 		}
 	}
+
+	#.quux <category>
+	if {[llength $arg] == 1} {
+		global username
+		set category $arg
+		set i 0
+		set dateformat [registry get date.formats.long]
+		set sql "SELECT quux_id, quux_date, quux_category, quux_content, quux_tags FROM quux WHERE user_id = [getuserid $idx] AND quux_deleted = 0"
+		if { $category != "*" } { append sql " AND quux_category = '[sqlescape $category]'" }
+		append sql " ORDER BY quux_date DESC LIMIT 20"
+		foreach row [sql $sql] {
+			foreach "id date cat content tags" $row {}
+			set text "[completestringright $id 3]. "
+			if { $category == "*" } { append text "$cat - " }
+			append text $content
+
+			#Tags
+			set tags [string trim [string map [list "client:$username" ""] $tags]]
+			if {$tags != ""} {
+				append text " \00314$tags\003"
+			}
+
+			putdcc $idx $text
+			incr i
+		}
+		if {$i == 0} {
+			putdcc $idx "$arg xuuQ."
+			return 0
+		}
+		return 1
+	}
+
+	#.quux <category> <text to add>
+	set category [lindex $arg 0]
+	set content [string range $arg [string length $category]+1 end]
+	quux::add [getuserid $idx] $category $content
+	putcmdlog "#$handle# quux ..."
+	return 0
 }
