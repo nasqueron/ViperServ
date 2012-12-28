@@ -27,7 +27,11 @@ proc log {logfile handle message} {
 }
 
 #Prints a message to all the techs
-proc putdebug {message} {
+proc putdebug {{message ""}} {
+	if {$message == ""} {
+		global errorInfo
+		set message $errorInfo
+	}
 	foreach conn [dcclist CHAT] {
 		foreach "idx handle uhost type flags idle" $conn {}
 		#dccputchan 0 "(debug) $conn"
