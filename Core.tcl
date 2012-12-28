@@ -43,6 +43,24 @@ proc completestring {text len {char " "}} {
 	}
 }
 
+proc completestringright {text len {char " "}} {
+	set curlen [string length $text]
+	if {$curlen >= $len} {
+		return $text
+	}
+	set completedtext [string range [completestring $text $len $char] $curlen end]
+	append completedtext $text
+}
+
+## Prepends 0s to a number
+##
+## @param $number The number to zerofill
+## @param $digits The number length
+## @return The zerofilled number
+proc zerofill {number digits} {
+	format "%0${digits}d" $number
+}
+
 #
 # SQL
 #
