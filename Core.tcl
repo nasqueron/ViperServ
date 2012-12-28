@@ -118,6 +118,13 @@ proc sqladd {table {data1 ""} {data2 ""}} {
 	sql $sql
 }
 
+# Gets the value of the AUTOINCREMENT column for the last INSERT
+#
+# @return the last value of the primary key
+proc sqllastinsertid {} {
+	sql "SELECT LAST_INSERT_ID()"
+}
+
 #
 # Registry
 #
