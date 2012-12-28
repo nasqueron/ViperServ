@@ -114,15 +114,28 @@ namespace eval ::gerrit:: {
 # 
 
 proc dcc:gerrit {handle idx arg} {
-	if {$arg == ""} {
-		putdcc $idx "Usage: .gerrit <query>"
-		return 0
-	}
+	switch $arg {
+		"" {
+			putdcc $idx "Usage: .gerrit <query>"
+			putdcc $idx "Cmds:  .gerrit stats"
+			return 0
+		}
 
-	# TODO: support several Gerrit servers
-	set server [registry get gerrit.defaultserver]
-	putdcc $idx [gerrit::query $server $arg]
-	return 1
+		"stats" {
+			foreach row [sql "SELECT SUBSTRING(data, 19), value FROM registry WHERE LEFT(data, 18) = 'gerrit.stats.type.'"] {
+				putdcc $idx $row
+			}
+			return 1
+		}
+
+		default {
+			# TODO: support several Gerrit servers
+			set server [registry get gerrit.defaultserver]
+			putdcc $idx [gerrit::query $server $arg]
+			putcmdlog "#$handle# gerrit ..."
+			return 0
+		}
+	}
 }
 
 #
