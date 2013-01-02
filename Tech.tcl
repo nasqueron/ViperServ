@@ -27,8 +27,8 @@ proc log {logfile handle message} {
 }
 
 #Prints a message to all the techs
-proc putdebug {{message ""}} {
-	if {$message == ""} {
+proc putdebug {{message d41d8cd98f00b204e98}} {
+	if {$message == "d41d8cd98f00b204e98"} {
 		global errorInfo
 		set message $errorInfo
 	}

@@ -1,6 +1,10 @@
 # .tcl source scripts/Nasqueron/Gerrit.tcl
 
+package require json
+
 bind dcc - gerrit dcc:gerrit
+
+# Gerrit eventss are at the bottom of the file
 
 #
 # Gerrit helper methods
@@ -29,7 +33,7 @@ namespace eval ::ssh:: {
 		close $fp
 
 		#Checks if agent exists
-		if {[string first ssh-agent [get_pid $env(SSH_AGENT_PID)]] == -1} {
+		if {[string first ssh-agent [get_processname $env(SSH_AGENT_PID)]] == -1} {
 			putcmdlog "SSH agent isn't running"
 			if {$tryToStartAgent} {
 				putdebug "Trying to launch SSH agent..."
@@ -55,7 +59,7 @@ namespace eval ::ssh:: {
 
 	}
 
-	proc get_pid {pid} {
+	proc get_processname {pid} {
 		set processes [exec ps xw]
 		foreach process [split $processes \n] {
 			set current_pid [lindex $process 0]
@@ -101,11 +105,149 @@ namespace eval ::gerrit:: {
 			# Process gerrit event
 			set event [json::json2dict $buffers($idx)]
 			set buffers($idx) ""
-			registry incr gerrit.stats.type.[dict get $event type]
+			set type [dict get $event type]
+			#todo: handle here multiservers
+			callevent wmreview $type $event
 		} {
 			append buffers($idx) $text
 		}
 		return 0		
+	}
+
+	# Registers a new event
+	#
+	proc event {type callback} {
+		dict lappend gerrit::events $type $callback
+	}
+
+	# Calls an event proc
+	# 
+	# @param $type the Gerrit type
+	# @param $message a dict representation of the JSON message sent by Gerrit
+	proc callevent {server type message} {
+		if [dict exists $gerrit::events all] {
+			foreach procname [dict get $gerrit::events all] {
+				$procname $server $type $message
+			}
+		}
+
+		if [dict exists $gerrit::events $type] {
+			# Determines the proc arguments from the Gerrit message type
+			switch $type {
+				"patchset-created" { set params "change patchSet uploader" }
+				"change-abandoned" { set params "change patchSet abandoner" }
+				"change-restored" { set params "change patchSet restorer" }
+				"change-merged" { set params "change patchSet submitter" }
+				"comment-added" { set params "change patchSet author approvals comment" }
+				"ref-updated" { set params "submitter refUpdate" }
+
+				default {
+					putdebug "Unknown Gerrit type in gerrit::callevent: $type"
+					return
+				}
+			}
+
+			# Gets the values of the proc arguments
+			set args $server
+			foreach param $params {
+				if [dict exists $message $param] {
+					lappend args [dict get $message $param]
+				} {
+					lappend args ""
+				}
+			}
+
+			# Calls callbacks procs
+			foreach procname [dict get $gerrit::events $type] {
+				$procname {*}$args
+			}
+		}
+	}
+
+	# The events callback methods
+	set events {}
+
+	# # # # # # # # # # # # # # #
+
+	# Handles statistics
+	proc stats {server type message} {
+		registry incr gerrit.stats.type.$type
+	}
+
+	# Announces a call
+	proc debug {server type message} {
+		putdebug "$server -> $type +1"
+	}
+
+	proc onNewPatchset {server change patchset uploader} {
+		# Gets relevant variables from change, patchset & uploader
+		set who [dict get $uploader name]
+		foreach var "project branch topic subject url" {
+			if [dict exists $change $var] {
+				set $var [dict get $change $var]
+			} {
+				set $var ""
+			}
+		}
+		set patchsetNumber [dict get $patchset number]
+
+		#IRC notification
+		if {$server == "wmreview" && $who != "L10n-bot"} {
+			set message "\[$project] $who uploaded a [numeric2ordinal $patchsetNumber] patchset to change '$subject'"
+			if {$branch != "master"} { append message " in branch $branch" }
+			append message " - $url"
+		}
+		#if {[string range $project 0 9] == "mediawiki/"} {
+		#	puthelp "PRIVMSG #mediawiki :$message"
+		#}
+	}
+
+	proc onCommentAdded {server change patchset author approvals comment} {
+		# Gets relevant variables from change, patchset & uploader
+		set who [dict get $author name]
+		foreach var "project branch topic subject url" {
+			if [dict exists $change $var] {
+				set $var [dict get $change $var]
+			} {
+				set $var ""
+			}
+		}
+
+		#IRC notification
+		if {$server == "wmreview" && $who != "jenkins-bot"} {
+			set verbs {
+				"\0034puts a veto on\003"
+				"\0034suggests improvement on\003"
+				"comments"
+				"\0033approves\003"
+				"\0033definitely approves\003"
+			}
+			set CR 0
+			if {$approvals != ""} {
+				foreach approval $approvals {
+					if {[dict get $approval type] == "CRVW"} {
+						set CR [dict get $approval value]
+						break
+					}
+				}
+			}
+			set verb [lindex $verbs [expr $CR + 2]]
+			set message "\[$project] $who $verb change '$subject'"
+			if {$comment != ""} {
+				if {[strlen $message] > 160} {
+					append message ": '[string range $comment 0 158]...'"
+				} {
+					append message ": '$comment'"
+				}
+			}
+			append message " - $url"
+			if {[string range $project 0 9] == "mediawiki/" && ($comment != "" || $CR < 0)} {
+				#putdebug "OK -> $message"
+				puthelp "PRIVMSG #mediawiki :$message"
+			} {
+				putdebug "Not on IRC -> $message"
+			}
+		}
 	}
 }
 
@@ -143,3 +285,8 @@ proc dcc:gerrit {handle idx arg} {
 #
 
 ssh::set_agent
+
+gerrit::event all gerrit::stats
+gerrit::event all gerrit::debug
+gerrit::event patchset-created gerrit::onNewPatchset
+gerrit::event comment-added gerrit::onCommentAdded

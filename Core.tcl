@@ -235,3 +235,54 @@ proc geturltext {url {trim 1}} {
 		return $text
 	}
 }
+
+proc numeric2ordinal {n} {
+	switch $n {
+		 1 { return first }
+		 2 { return second }
+		 3 { return third }
+		 5 { return fifth }
+		 8 { return eight }
+		 9 { return ninth }
+		#todo: ve -> f / y -> ie
+		12 { return twelfth }
+		default {
+			set ordinal "[numeric2en $n]th"
+			set m [expr $n % 10]
+			if {$m == 0} {
+				return [string map "yth ieth" $ordinal]
+			}
+			if {$n < 20} { return $ordinal }
+			if {$n > 100} { return "${n}th" }
+			return "[numeric2en [expr $n - $m]]-[numeric2ordinal $m]"
+		}
+	}
+}
+
+proc numeric2en {n {optional 0}} {
+    #---------------- English spelling for integer numbers
+    if {[catch {set n [expr $n]}]}  {return $n}
+    if {$optional && $n==0} {return ""}
+    array set dic {
+        0 zero 1 one 2 two 3 three 4 four 5 five 6 six 7 seven 
+        8 eight 9 nine 10 ten 11 eleven 12 twelve
+    }
+    if [info exists dic($n)] {return $dic($n)}
+    foreach {value word} {1000000 million 1000 thousand 100 hundred} {
+        if {$n>=$value} {
+            return "[numeric2en $n/$value] $word [numeric2en $n%$value 1]"
+        }
+    } ;#--------------- composing between 13 and 99...
+    if $n>=20 {
+        set res $dic([expr $n/10])ty
+        if  $n%10 {append res -$dic([expr $n%10])}
+    } else {
+        set res $dic([expr $n-10])teen
+    } ;#----------- fix over-regular compositions
+    regsub "twoty" $res "twenty" res
+    regsub "threet" $res "thirt" res
+    regsub "fourty"  $res  "forty"  res
+    regsub "fivet"  $res  "fift"  res
+    regsub  "eightt"   $res  "eight" res
+    set res
+} ;#RS
