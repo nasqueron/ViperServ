@@ -83,6 +83,7 @@ namespace eval ::quux:: {
 		global username
 		lappend tags client:$username
 		sqladd quux "user_id quux_date quux_category quux_content quux_tags" [list $userid [unixtime] $category $content $tags]
+		sqllastinsertid
 	}
 
 	## Tags a quux
@@ -112,7 +113,7 @@ namespace eval ::quux:: {
 }
 
 proc dcc:quux {handle idx arg} {
-	#â‚#.quux
+	#.quux
 	if {[llength $arg] == 0} {
 		#Prints categories
 		putdcc $idx [sql "SELECT DISTINCT quux_category FROM quux WHERE user_id = [getuserid $idx] AND quux_deleted = 0"]
@@ -174,7 +175,7 @@ proc dcc:quux {handle idx arg} {
 	#.quux <category> <text to add>
 	set category [lindex $arg 0]
 	set content [string range $arg [string length $category]+1 end]
-	quux::add [getuserid $idx] $category $content
+	putdcc $idx "Published under QX[quux::add [getuserid $idx] $category $content]"
 	putcmdlog "#$handle# quux ..."
 	return 0
 }
