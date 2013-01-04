@@ -24,6 +24,26 @@ proc s {count} {
 }
 
 #
+# Dictionaries
+#
+
+# Gets recursively a value in a dictionary
+#
+# @param $dict the dictionary (without any dots in keys)
+# @param $key the value's key; if dict are nested, succesive keys are separated by dots (e.g. change.owner.name)
+# @return the dictionary value at the specified key
+proc dg {dict key} {
+	set keys [split $key .]
+	if {[llength $keys] > 1} {
+		# Recursive call
+		# dg $dict a.b = dict get [dict get $dict a] b
+		dg [dict get $dict [lindex $keys 0]] [join [lrange $keys 1 end] .]
+	} {
+		dict get $dict $key
+	}
+}
+
+#
 # Strings
 #
 
