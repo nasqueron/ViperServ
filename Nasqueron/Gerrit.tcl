@@ -81,10 +81,41 @@ namespace eval ::ssh:: {
 namespace eval ::gerrit:: {
 	## Queries a Gerrit server
 	##
+	## @param $server The Gerrit server
 	## @param $query The query to send
 	## @seealso http://gerrit-documentation.googlecode.com/svn/Documentation/2.5/cmd-query.html
 	proc query {server query} {
 		exec -- ssh [ssh::get_connection_parameter $server] gerrit query $query
+	}
+
+	## Queries a Gerrit server, searching changes with an expression
+	##
+	## @param $server The Gerrit server
+	## @param $project The project
+	## @param $query The query
+	proc search {server project query} {
+		set query "message:$query"
+		if {$project != "*" } {
+			append query " project:$project"
+		}
+		foreach line [split [query $server "--format json $query"] "\n"] {
+			set c [json::json2dict $line]
+			if {![dict exists $c type]} {
+				lappend results "\[[dg $c project]\] <[dg $c owner.name]> [dg $c subject] ([status [dg $c status]]) - [dg $c number]"
+			}
+		}
+		return $results
+	}
+
+	# Gets a string representation of the API status
+	#
+	# @param $status the API status string code
+	# @return the textual representation of the status
+	proc status {status} {
+		switch $status {
+			"NEW" { return "Review in progress" }
+			default { return $status }
+		}
 	}
 
 	## Launches a socket to monitor Gerrit events in real time and initializes events.
@@ -92,10 +123,43 @@ namespace eval ::gerrit:: {
 	##
 	## @seealso http://gerrit-documentation.googlecode.com/svn/Documentation/2.5/cmd-stream-events.html
 	proc setup_stream_events {server} {
-		control [connect [registry get gerrit.$server.streamevents.host] [registry get gerrit.$server.streamevents.port]] gerrit::listen:stream_event
+		set idx [connect [registry get gerrit.$server.streamevents.host] [registry get gerrit.$server.streamevents.port]]
+		control $idx gerrit::listen:stream_event
 	}
 
+	# Listens to a Gerrit stream event
+	#
+	# @param $idx The connection idx
+	# @param $text The message received
+	# @return 0 if we continue to control this connection; otherwise, 1
 	proc listen:stream_event {idx text} {
+		# To ensure  a better system stability, we don't directly handle
+		# a processus  calling the 'ssh' command,  but use a lightweight
+		# non blocking socket connection:
+		# 
+		# This  script <--socket--> Node  proxy <--SSH--> Gerrit  server
+		# 
+		# We receive line of texts from the proxy. There are chunks of a
+		# JSON message (we convert it to a dictionary, to be used here).
+		# 
+		# As the json objects are rather long, it is generally truncated
+		# in several lines. Immediately after, a line with "--" is sent:
+		#
+		#   1.  {"type":"comment-added","change":......................
+		#   2.  ................,"comment":"Dark could be the night."}
+		#   3.  --
+		#   4.  {"type":"patchset-created",...........................}
+		#   5.  --
+		#   6.  ........
+		#
+		# Text is stored in a global array,  shared with others control
+		# procs, called $buffers. The message is to add in the idx key.
+		# It should be cleared after, as the idx could be reassigned.
+		#
+		# When a message is received, we sent the decoded json message
+		# to gerrit::callevent, which has the job to fire events and
+		# to call event callback procedures.
+		
 		global buffers
 
 		if {$text == ""} {
@@ -125,6 +189,39 @@ namespace eval ::gerrit:: {
 	# @param $type the Gerrit type
 	# @param $message a dict representation of the JSON message sent by Gerrit
 	proc callevent {server type message} {
+		# Gerrit events could be from two types:
+		#
+		#    (1) Generic events
+		#    ------------------
+		#        They are created with "gerrit::event all callbackproc".
+		#        The callback procedure args are server, type & message.
+		#
+		#        Every Gerrit event is sent to them.
+		#
+		#    (2) Specific events
+		#    -------------------
+		#        Similar create way:  "gerrit::event type callbackproc".
+		#
+		#        Only Gerrit events of matching type are sent to them.
+		#        The callback procedure arguments varie with the type.
+		#
+		#        patchset-created ... server change patchSet uploader
+		#        change-abandoned ... server change patchSet abandoner
+		#        change-restored .... server change patchSet restorer
+		#        change-merged ...... server change patchSet submitter
+		#        comment-added ...... server change patchSet author approvals comment
+		#        ref-updated ........ server submitter refUpdate
+		#
+		# The documentation of these structures can be found at this URL:
+		# http://gerrit-documentation.googlecode.com/svn/Documentation/2.5.1/json.html
+		#	
+		# The callback procedures are all stored in the global ditionary
+		# $gerrit::events.
+		#
+		# Generic events are fired before specific ones. They can't edit
+		# the message. They can't say "no more processing".
+		#
+
 		if [dict exists $gerrit::events all] {
 			foreach procname [dict get $gerrit::events all] {
 				$procname $server $type $message
@@ -212,24 +309,25 @@ namespace eval ::gerrit:: {
 				set $var ""
 			}
 		}
+		set CR 0
+		if {$approvals != ""} {
+			foreach approval $approvals {
+				if {[dict get $approval type] == "CRVW"} {
+					set CR [dict get $approval value]
+					break
+				}
+			}
+		}
 
 		#IRC notification
 		if {$server == "wmreview" && $who != "jenkins-bot"} {
+			# English message
 			set verbs {
 				"\0034puts a veto on\003"
 				"\0034suggests improvement on\003"
 				"comments"
 				"\0033approves\003"
 				"\0033definitely approves\003"
-			}
-			set CR 0
-			if {$approvals != ""} {
-				foreach approval $approvals {
-					if {[dict get $approval type] == "CRVW"} {
-						set CR [dict get $approval value]
-						break
-					}
-				}
 			}
 			set verb [lindex $verbs [expr $CR + 2]]
 			set message "\[$project] $who $verb change '$subject'"
@@ -241,11 +339,14 @@ namespace eval ::gerrit:: {
 				}
 			}
 			append message " - $url"
-			if {[string range $project 0 9] == "mediawiki/" && ($comment != "" || $CR < 0)} {
-				#putdebug "OK -> $message"
-				puthelp "PRIVMSG #mediawiki :$message"
-			} {
-				putdebug "Not on IRC -> $message"
+
+			# IRC notification
+			if 0 {
+				if {[string range $project 0 9] == "mediawiki/" && ($comment != "" || $CR < 0)} {
+					puthelp "PRIVMSG #mediawiki :$message"
+				} {
+					putdebug "Not on IRC -> $message"
+				}
 			}
 		}
 	}
@@ -255,11 +356,17 @@ namespace eval ::gerrit:: {
 # Gerrit binds
 # 
 
+# .gerrit query
+# .gerrit stats
+# .gerrit search <project> <query to searh in commit message>
 proc dcc:gerrit {handle idx arg} {
-	switch $arg {
+	set server [registry get gerrit.defaultserver]
+
+	switch [lindex $arg 0] {
 		"" {
 			putdcc $idx "Usage: .gerrit <query>"
 			putdcc $idx "Cmds:  .gerrit stats"
+			putdcc $idx "Cmds:  .gerrit search <project> <query to searh in commit message>"
 			return 0
 		}
 
@@ -270,9 +377,24 @@ proc dcc:gerrit {handle idx arg} {
 			return 1
 		}
 
+		"search" {
+			set nbResults 0
+			set project [lindex $arg 1]
+			set query [lrange $arg 2 end]
+			foreach result [gerrit::search $server $project $query] {
+				putdcc $idx $result
+				incr nbResults
+			}
+			if {$nbResults == 0} {
+				putdcc $idx ":/"
+			} {
+				putcmdlog "#$handle# gerrit search ..."
+			}
+			return 0
+		}
+
 		default {
 			# TODO: support several Gerrit servers
-			set server [registry get gerrit.defaultserver]
 			putdcc $idx [gerrit::query $server $arg]
 			putcmdlog "#$handle# gerrit ..."
 			return 0
@@ -287,6 +409,6 @@ proc dcc:gerrit {handle idx arg} {
 ssh::set_agent
 
 gerrit::event all gerrit::stats
-gerrit::event all gerrit::debug
+#gerrit::event all gerrit::debug
 gerrit::event patchset-created gerrit::onNewPatchset
 gerrit::event comment-added gerrit::onCommentAdded
