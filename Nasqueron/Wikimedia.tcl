@@ -30,10 +30,16 @@ namespace eval ::wikimedia {
 	$value = $wgConf->settings%%key%%;
 	if (is_array($value)) {
 		$values = array();
-		foreach ($value as $k => $v) {
-			$values[] = "$k => $v";
+		if (array_keys($value) !== range(0, count($value) - 1)) {
+			//Associative arary
+			foreach ($value as $k => $v) {
+				$values[] = "$k => $v";
+			}
+			echo implode(' / ', $values);
+		} else {
+			//Numeric array
+			echo implode(', ', $value);
 		}
-		echo implode(' / ', $values);
 	} else if (is_bool($value)) {
 		echo $value ? 'true' : 'false';
 	} else {
