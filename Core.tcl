@@ -194,20 +194,30 @@ proc registry {command key {value ""}} {
 # Users information
 #
 
-#Gets user_id from a username, idx or user_id
-proc getuserid {data} {
-	if {$data == ""} {
+# Gets user_id from a username, idx or user_id
+#
+#
+proc getuserid {who} {
+	if {$who == ""} {
 		return
-	} elseif {![isnumber $data]} {
+	} elseif {![isnumber $who]} {
 		#username -> user_id
-		sql "SELECT user_id FROM users WHERE username = '[sqlescape $data]'"
-	} elseif {$data < 1000} {
+		sql "SELECT user_id FROM users WHERE username = '[sqlescape $who]'"
+	} elseif {$who < 1000} {
 		#idx -> user_id
-		getuserid [idx2hand $data]
+		getuserid [idx2hand $who]
 	} else {
 		#user_id -> user_id (or "" if not existing)
-		sql "SELECT user_id FROM users WHERE user_id = $data"
+		sql "SELECT user_id FROM users WHERE user_id = $who"
 	}
+}
+
+# Gets user info
+#
+# @param who The user
+# @param what The information to get
+proc getuserinfo {who what} {
+	sqlscalar "SELECT $what FROM users WHERE user_id = [getuserid $who]"
 }
 
 #
@@ -306,3 +316,13 @@ proc numeric2en {n {optional 0}} {
     regsub  "eightt"   $res  "eight" res
     set res
 } ;#RS
+
+# Truncates the first word
+#
+# @param string the string to truncate
+# @return the truncated string
+proc truncate_first_word {string} {
+        set pos [string first " " $string]
+        if {$pos == -1} return
+        string range $string $pos+1 end
+}
