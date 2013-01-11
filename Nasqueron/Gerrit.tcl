@@ -4,7 +4,7 @@ package require json
 
 bind dcc - gerrit dcc:gerrit
 
-# Gerrit eventss are at the bottom of the file
+# Gerrit events are at the bottom of the file
 
 #
 # Gerrit helper methods
@@ -98,6 +98,8 @@ namespace eval ::gerrit:: {
 		if {$project != "*" } {
 			append query " project:$project"
 		}
+		set results ""
+		putdebug $query
 		foreach line [split [query $server "--format json $query"] "\n"] {
 			set c [json::json2dict $line]
 			if {![dict exists $c type]} {
