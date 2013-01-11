@@ -1,6 +1,8 @@
 package require http
 
 bind dcc  -  sms	dcc:sms
+bind dcc  -  mail	dcc:mail
+
 bind pub  - !sms        pub:sms
 bind pub  - !identica	pub:identica
 bind pub  - !pub	pub:identica
@@ -181,4 +183,81 @@ proc identicapublish {account nick text} {
 	identicapost $account $text
 	putquick "NOTICE $nick :Publié sur identi.ca"
 	return 1
+}
+
+#
+# Mail
+#
+
+# .mail 
+proc dcc:mail {handle idx arg} {
+        global mail special
+        if {$arg == ""} {
+            putdcc $idx "## Syntaxe : .mail <destinataire> \[objet\]"
+            return
+        } elseif {[validuser [lindex $arg 0]]} {
+            set mail($idx-to) [getuserinfo [lindex $arg 0] user_email]
+        } elseif {[regexp {^[A-Za-z0-9._-]+@[[A-Za-z0-9.-]+$} [lindex $arg 0]]} {
+            set mail($idx-to) [lindex $arg 0]
+        } else {
+            putdcc $idx "Destinataire invalide : [lindex $arg 0]"
+            return
+        }
+        set mail($idx) ""
+        putdcc $idx "\002Alors, que désires tu envoyer comme mail ?\002"
+        putdcc $idx "Pour envoyer l'e-mail, entre une ligne ne contenant que ceci: \002+\002"
+        putdcc $idx "Pour annuler l'e-mail, entre une ligne ne contenant que ceci: \002-\002"
+ 
+        set mail($idx-subject) [truncate_first_word $arg]
+        if {$mail($idx-subject) == ""} {
+            putdcc $idx "\002Objet :\002"
+        } else {
+            putdcc $idx "\002Message :\002"
+        }
+ 
+        control $idx control:mail
+        dccbroadcast "Tiens, $handle est parti rédiger un mail ..."
+}
+
+# Controls mail encoding processus
+proc control:mail {idx text} {
+        global mail
+        if {$text == "+"} {
+                mail.send $mail($idx-to) $mail($idx-subject) $mail($idx) [getuserinfo $idx user_email]
+                unset mail($idx)
+                putdcc $idx "Envoyé :-)"
+                dccbroadcast "Et, hop, un mail d'envoyé pour [idx2hand $idx] :)"
+                return 1
+        } elseif {$text == "-"} {
+                unset mail($idx)
+                dccbroadcast "[idx2hand $idx] vient de changer d'avis et revient."
+                putdcc $idx "Ok, le mail a été annulé: retour au party line !"
+                return 1
+        } elseif {$mail($idx-subject) == ""} {
+                set mail($idx-subject) $text
+                putdcc $idx "\002Message :\002"
+        } else {
+                regsub -all {\\} $text "\\\\\\" text
+                regsub -all "'" $text "\\'" text
+                append mail($idx) "\n$text"
+        }
+}
+
+# Sends a mail
+#
+# @param to The recipient
+# @param subject The mail subject
+# @param message The message to send
+# @param from The mail author (optional)
+proc mail.send {to subject message {from {}}} {
+        set fd [open "|sendmail -t" w]
+        if {$from != ""} {
+                puts $fd "From: $from"
+        }
+	puts $fd "To: $to"
+	puts $fd "Subject: $subject"
+	puts $fd
+        puts $fd "$message"
+        flush $fd
+        close $fd
 }
