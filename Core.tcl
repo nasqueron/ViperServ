@@ -31,15 +31,19 @@ proc s {count} {
 #
 # @param $dict the dictionary (without any dots in keys)
 # @param $key the value's key; if dict are nested, succesive keys are separated by dots (e.g. change.owner.name)
-# @return the dictionary value at the specified key
-proc dg {dict key} {
+# @param $throwErrorIfKeyDoesNotExist when the key doesn't exist: if true, throws an error; otherwise, returns an empty string
+# @return the dictionary value at the specified key, or an empty string if the key doesn't exist
+proc dg {dict key {throwErrorIfKeyDoesNotExist 0}} {
 	set keys [split $key .]
 	if {[llength $keys] > 1} {
 		# Recursive call
 		# dg $dict a.b = dict get [dict get $dict a] b
-		dg [dict get $dict [lindex $keys 0]] [join [lrange $keys 1 end] .]
-	} {
+		dg [dg $dict [lindex $keys 0] $throwErrorIfKeyDoesNotExist] [join [lrange $keys 1 end] .] $throwErrorIfKeyDoesNotExist
+	} elseif {([llength $dict] % 2 == 0) && [dict exists $dict $key]} {
+		# This is a dict and we have a key
 		dict get $dict $key
+	} elseif {$throwErrorIfKeyDoesNotExist > 0} {
+		error "Key not found: $key"
 	}
 }
 
@@ -325,4 +329,80 @@ proc truncate_first_word {string} {
         set pos [string first " " $string]
         if {$pos == -1} return
         string range $string $pos+1 end
+}
+
+#
+# URLs
+#
+
+namespace eval url {
+        variable map
+        variable alphanumeric a-zA-Z0-9._~-
+        namespace export encode decode
+        namespace ensemble create
+}
+proc url::init {} {
+        variable map
+        variable alphanumeric a-zA-Z0-9._~-
+
+        for {set i 0} {$i <= 256} {incr i} { 
+                set c [format %c $i]
+                if {![string match \[$alphanumeric\] $c]} {
+                        set map($c) %[format %.2x $i]
+                }
+        }
+        # These are handled specially
+        array set map { " " + \n %0d%0a }
+}
+url::init
+proc url::encode {str} {
+        variable map
+        variable alphanumeric
+
+        # The spec says: "non-alphanumeric characters are replaced by '%HH'"
+        # 1 leave alphanumerics characters alone
+        # 2 Convert every other character to an array lookup
+        # 3 Escape constructs that are "special" to the tcl parser
+        # 4 "subst" the result, doing all the array substitutions
+
+        regsub -all \[^$alphanumeric\] $str {$map(&)} str
+        # This quotes cases like $map([) or $map($) => $map(\[) ...
+        regsub -all {[][{})\\]\)} $str {\\&} str
+        return [subst -nocommand $str]
+}
+
+# Decodes an URL
+#
+# @param $str The URL to decode
+# @return The decoded URL
+proc url::decode {str} {
+        # rewrite "+" back to space
+        # protect \ from quoting another '\'
+        set str [string map [list + { } "\\" "\\\\"] $str]
+
+        # prepare to process all %-escapes
+        regsub -all -- {%([A-Fa-f0-9][A-Fa-f0-9])} $str {\\u00\1} str
+
+        # process \u unicode mapped chars
+        return [subst -novar -nocommand $str]
+}
+
+#
+# GUID
+#
+
+# Gets the MD5 of a string, and returns it following the GUID format 
+#
+# @param $str The string to compute the hash
+# @return The MD5, formatted as a GUID
+proc guidmd5 {str} {
+	set md5 [md5 $str]
+	set output ""
+	for {set i 0} {$i < 32} {incr i} {
+		if {$i == 8 || $i == 12 || $i == 16 || $i == 20} {
+			append output "-"
+		}
+		append output [string index $md5 $i]
+	}
+	return $output
 }
