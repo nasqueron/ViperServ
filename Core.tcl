@@ -16,6 +16,15 @@ proc isnumber {v} {
     return [expr {! [catch {expr {int($v)}}]}]
 }
 
+# Returns +-<number>
+proc numberSign {number} {
+	if {$number > 0} {
+		return "+$number"
+	} {
+		return $number
+	}
+}
+
 #Returns "s" if $count implies a plural
 #TODO: keep this method for French (ie NOT adjusting values for English)
 #      and grab the plural proc from wiki.tcl.tk for English.
