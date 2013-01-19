@@ -29,8 +29,9 @@
 bind bot  -  tc2	 bot:tc2
 
 #Commands aliases only, main commands are handled by tc2:initialize
-bind dcc  W  php-fpm	 dcc:phpfpm
-bind pub  W .php-fpm	 pub:phpfpm
+  bind dcc  W  php-fpm	 dcc:phpfpm
+  bind pub  W .php-fpm	 pub:phpfpm
+  bind pub  - .df	 pub:df
 
 #
 # Initializes bind and creates procedures for every tc2 commands

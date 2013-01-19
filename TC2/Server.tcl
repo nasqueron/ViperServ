@@ -716,6 +716,45 @@ proc tc2:command:phpfpm {requester arg} {
 	}
 }
 
+#.df
+#.df pull [extension]
+proc tc2:command:df {requester arg} {
+	set command [lindex $arg 0]
+
+	switch $command {
+		"pull" {
+			set what [lindex $arg 1]
+			if {$what == ""} {
+				set what core
+			} {
+				if {![file exists [registry get df.paths.extensions]/$what]} {
+					return [list 0 "Invalid extension: $what"]
+				}
+			}
+
+			catch {exec -- su -m [registry get df.who] -c "[registry get df.paths.bin]/dfpull $what"} status
+			if { $status == "Already up-to-date." } {
+				return { 1 "Repository already up-to-date." }
+			} elseif { [string first "Can't currently pull code" $status] > -1 }  {
+				list 0 $status
+			} else {
+				putdebug $status
+				return { 1 "repository updated" }
+			}
+		}
+
+		"" {
+			return {0 "pull expected"}
+		}
+
+		default {
+			set reply 0
+			lappend reply "unknown command: $command"
+		}
+
+	}
+}
+
 #ci status
 #ci stop
 proc tc2:command:ci {requester arg} {
