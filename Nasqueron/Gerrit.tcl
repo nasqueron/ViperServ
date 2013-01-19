@@ -109,6 +109,30 @@ namespace eval ::gerrit:: {
 		return $results
 	}
 
+	# Gets the approvals for a specified change
+	proc approvals {server change} {
+		set change [query $server "--format JSON --all-approvals $change"]
+		#We exploit here a bug: parsing stops after correct item closure, so \n new json message is ignored
+		set change [json::json2dict $change]
+		set lastPatchset [lindex [dg $change patchSets] end]
+		dg $lastPatchset approvals
+	}
+
+	proc approvals2xml {approvals {indentLevel 0} {ignoreSubmit 1}} {
+		set indent [string repeat "\t" $indentLevel]
+		append xml "$indent<approvals>\n"
+		foreach approval $approvals {
+			set type [dg $approval type]
+			if {$type == "SUBM" && $ignoreSubmit} { continue }
+			append xml "$indent\t<approval type=\"$type\">
+		$indent<user email=\"[dg $approval by.email]\">[dg $approval by.name]</user>
+		$indent<date>[dg $approval grantedOn]</date>
+		$indent<value>[numberSign [dg $approval value]]</value>
+	$indent</approval>\n"
+		}
+		append xml "$indent</approvals>"
+	}
+
 	# Gets a string representation of the API status
 	#
 	# @param $status the API status string code
@@ -173,11 +197,14 @@ namespace eval ::gerrit:: {
 			set buffers($idx) ""
 			set type [dict get $event type]
 			#todo: handle here multiservers
-			callevent wmreview $type $event
+			if { [catch { callevent wmreview $type $event } err] } {
+				putdebug "A general error occured during the Gerrit event processing."
+				putdebug $errorInfo
+			}
 		} {
 			append buffers($idx) $text
 		}
-		return 0		
+		return 0
 	}
 
 	# Registers a new event
@@ -226,7 +253,10 @@ namespace eval ::gerrit:: {
 
 		if [dict exists $gerrit::events all] {
 			foreach procname [dict get $gerrit::events all] {
-				$procname $server $type $message
+				if [catch {$procname $server $type $message} err] {
+					putdebug "An error occured in $procname (called by a $type event):"
+					putdebug $errorInfo
+				}
 			}
 		}
 
@@ -258,7 +288,10 @@ namespace eval ::gerrit:: {
 
 			# Calls callbacks procs
 			foreach procname [dict get $gerrit::events $type] {
-				$procname {*}$args
+				if [catch {$procname {*}$args} err] {
+					putdebug "An error occured in $procname (called by a $type event):"
+					putdebug $errorInfo
+				}
 			}
 		}
 	}
@@ -281,12 +314,8 @@ namespace eval ::gerrit:: {
 	proc onNewPatchset {server change patchset uploader} {
 		# Gets relevant variables from change, patchset & uploader
 		set who [dict get $uploader name]
-		foreach var "project branch topic subject url" {
-			if [dict exists $change $var] {
-				set $var [dict get $change $var]
-			} {
-				set $var ""
-			}
+		foreach var "project branch topic subject url topic id" {
+			set $var [dg $change $var]
 		}
 		set patchsetNumber [dict get $patchset number]
 
@@ -299,12 +328,23 @@ namespace eval ::gerrit:: {
 		#if {[string range $project 0 9] == "mediawiki/"} {
 		#	puthelp "PRIVMSG #mediawiki :$message"
 		#}
+
+			# Activity feed
+			set email [dict get $uploader email]
+			set item "	<item type=\"patchset\">
+		<user email=\"$email\">$who</user>
+		<project>$project</project>
+		<branch>$branch</branch>
+		<topic>$topic</topic>
+		<change id=\"$id\">$subject</change>
+	</item>"
+			writeActivityFeeds $email $project $item
 	}
 
 	proc onCommentAdded {server change patchset author approvals comment} {
 		# Gets relevant variables from change, patchset & uploader
 		set who [dict get $author name]
-		foreach var "project branch topic subject url" {
+		foreach var "project branch topic subject url id status" {
 			if [dict exists $change $var] {
 				set $var [dict get $change $var]
 			} {
@@ -321,7 +361,7 @@ namespace eval ::gerrit:: {
 			}
 		}
 
-		#IRC notification
+		#Wikimedia: IRC notification, activity feed
 		if {$server == "wmreview" && $who != "jenkins-bot"} {
 			# English message
 			set verbs {
@@ -332,6 +372,7 @@ namespace eval ::gerrit:: {
 				"\0033definitely approves\003"
 			}
 			set verb [lindex $verbs [expr $CR + 2]]
+			regexp "\[a-z\\s\]+" $verb plainVerb
 			set message "\[$project] $who $verb change '$subject'"
 			if {$comment != ""} {
 				if {[strlen $message] > 160} {
@@ -350,7 +391,103 @@ namespace eval ::gerrit:: {
 					putdebug "Not on IRC -> $message"
 				}
 			}
+
+			# Activity feed
+			set message [string map [list $verb $plainVerb] $message]
+			set email [dict get $author email]
+			set item "	<item type=\"comment\">
+		<user email=\"$email\">$who</user>
+		<project>$project</project>
+		<change id=\"$id\">$subject</change>
+		<message cr=\"$CR\">$comment</message>
+	</item>"
+			writeActivityFeeds $email $project $item
 		}
+	}
+
+	# Called when a Gerrit change ismerged
+	proc onChangeMerged {server change patchSet submitter} {
+                if {$server == "wmreview" && [dg $submitter name] != "L10n-bot"} {
+			foreach var "id project branch topic subject" { set $var [dg $change $var] }
+			set itemBase "
+		<user email=\"[dg $submitter email]\">[dg $submitter name]</user>
+		<project>$project</project>
+		<branch>$branch</branch>
+		<topic>$topic</topic>
+		<change id=\"$id\">$subject</change>\n"
+			set approvals [approvals $server $id]
+			append itemBase [gerrit::approvals2xml $approvals 2 1]
+			set item "\t<item type=\"merge\">$itemBase\n\t</item>"
+			set itemMerged "\t<item type=\"merged\">\n\t\t<owner email=\"[dg $change owner.email]\">[dg $change owner.name]</owner>$itemBase\n\t</item>"
+
+			set dir [registry get gerrit.feeds.path]
+			writeActivityFeed $dir/user/[guidmd5 [dg $submitter email]].xml $item
+			if {[dg $change owner.email] != [dg $submitter email]} {
+				writeActivityFeed $dir/user/[guidmd5 [dg $change owner.email]].xml $itemMerged
+			}
+			writeActivityFeed $dir/project/[string map {/ . - _} $project].xml $itemMerged
+			#TODO: OPW
+		}
+	}
+
+	# Writes an activity feed item to the relevant feeds
+	# 
+	# @param $who The user e-mail
+	# @param $project The project
+	# @param $item The XML item
+	proc writeActivityFeeds {who project item} {
+		set dir [registry get gerrit.feeds.path]
+		writeActivityFeed $dir/user/[guidmd5 $who].xml $item
+		writeActivityFeed $dir/project/[string map {/ . - _} $project].xml $item
+		#TODO: opw feed
+	}
+
+	# Writes an activity feed item to the specifief file
+	# 
+	# @param $file The output file
+	# @param $item The XML item
+	proc writeActivityFeed {file item} {
+		if ![file exists $file] {
+			set fd [open $file w]
+			puts $fd "<items>"
+			puts $fd $item
+			puts $fd "</items>"
+		} {
+			set fd [open $file {RDWR CREAT}]
+			set header [read $fd 4096]
+			set startFound 0
+			set pos [string first "<items" $header]
+			if {$pos > -1} {
+				set pos [string first ">" $header $pos]
+				if {$pos > -1} {
+					set startFound 1
+					incr pos
+				}
+			}
+			if $startFound {
+				# Appends <item> block after <items>
+				# Prepare our file in a temporary $fdtmp
+				set fdtmp [file tempfile]
+				seek $fd 0 start
+				puts $fdtmp [read $fd $pos]
+				puts -nonewline $fdtmp $item
+				puts -nonewline $fdtmp [read $fd]
+				flush $fdtmp
+				seek $fdtmp 0 start
+				seek $fd 0 start
+				puts $fd [string trim [read $fdtmp]]
+				close $fdtmp
+			} {
+				# Adds a comment at the end of the file
+				seek $fd 0 end
+				puts $fd "<!-- Can't find <items> / added at [unixtime]:"
+				puts $fd $item
+				puts $fd "-->"
+			}
+		}
+		flush $fd
+		close $fd
+
 	}
 }
 
@@ -414,3 +551,4 @@ gerrit::event all gerrit::stats
 #gerrit::event all gerrit::debug
 gerrit::event patchset-created gerrit::onNewPatchset
 gerrit::event comment-added gerrit::onCommentAdded
+gerrit::event change-merged gerrit::onChangeMerged
