@@ -675,7 +675,7 @@ proc tc2:command:phpfpm {requester arg} {
 			if ![tc2:username_exists $user] {
 				return "0 {$user isn't a valid [tc2:hostname] user}"
 			}
-			if [file exists [set file "/usr/local/etc/php-fpm/$user.conf"]] {
+			if [file exists [set file "/usr/local/etc/php-fpm/pool-prod/$user.conf"]] {
 				return "0 {there is already a $user pool}"
 			}
 			if {![tc2:isroot $requester] && ![tc2:userallow $requester $user]} {
