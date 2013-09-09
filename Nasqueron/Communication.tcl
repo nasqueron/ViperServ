@@ -2,11 +2,12 @@ package require http
 
 bind dcc  -  sms	dcc:sms
 bind dcc  -  mail	dcc:mail
-
+bind dcc  -  twitter	dcc:twitter
 bind pub  - !sms        pub:sms
 bind pub  - !identica	pub:identica
-bind pub  - !pub	pub:identica
-bind pub  - !twit	pub:identica
+bind pub  - !pub	pub:twitter
+bind pub  - !twit	pub:twitter
+bind pub  - !tweet	pub:twitter
 bind pub  - !idee	pub:idee
 bind pub  - !idees	pub:idee
 
@@ -132,7 +133,7 @@ proc pub:sms {nick uhost handle chan text} {
 }
 
 #
-# Identi.ca
+# Identi.ca and Twitter
 #
 
 #Posts $message on the identi.ca $account account
@@ -146,6 +147,96 @@ proc identicapost {account message} {
 	::http::cleanup $tok
 }
 
+#Posts $message on the Twitter $account account
+proc twitterpost {account message} {
+	set status_url "https://api.twitter.com/1.1/statuses/update.json"
+	if {[catch {twitter_query $status_url $account [list status $message]} error]} {
+		putdebug "Twitter error: $error"
+		return 0
+	}
+	return 1
+}
+
+#Gets the Twitter OAuth token
+proc twitter_token {account} {
+	registry get twitter.oauth.tokens.$account
+}
+
+proc dcc:twitter {handle idx arg} {
+	set command [lindex $arg 0]
+	switch $command {
+		"setup" {
+			set account [lindex $arg 1]
+			if {$account == ""} {
+				putdcc $idx "What account to setup?"
+				return 0
+			}
+			if {[twitter_token $account] != ""} {
+				switch [lindex $arg 2] {
+					"--force" { registry del twitter.oauth.tokens.$account }
+					"" { 
+						putdcc $idx "There is already a token set for this account. Please use '.twitter setup $account --force' to erase it."
+						return 0
+					}
+				}
+			}
+			set pin [lindex $arg 2]
+			if {$pin == "" || $pin == "--force"} {
+				#Initializes requests
+				if {[catch {oauth::get_request_token {*}[registry get twitter.oauth.consumer]} data]} {
+					putdebug "Can't request OAuth token for Twitter $account account: $data"
+					putdcc $idx "An error occured, I can't request an OAuth token for you account."
+					return 0
+				} {
+					registry set twitter.oauth.tokens.$account "[dict get $data oauth_token] [dict get $data oauth_token_secret]"
+					putdcc $idx "Step 1 — Go to [dict get $data auth_url]"
+					putdcc $idx "Step 2 — .twitter setup $account <the PIN code>"
+					return 1
+				}
+			} {
+				#Saves token
+				if {[catch {oauth::get_access_token {*}[registry get twitter.oauth.consumer] {*}[twitter_token $account] $pin} data]} {
+					putdebug "Can't confirm OAuth token for Twitter $account account: $data"
+					putdcc $idx "An error occured, I can't confirm an OAuth token for you account."
+					return 0
+				} {
+					registry set twitter.oauth.tokens.$account "[dict get $data oauth_token] [dict get $data oauth_token_secret]"
+					putdcc $idx "Ok, I've now access to account [dict get $data screen_name]."
+					putcmdlog "#$handle# twitter setup $account ..."
+					return 0
+				}
+			}
+		}
+
+		default { putdcc $idx "Unknown Twitter command: $arg"}
+	}
+}
+
+#Sends a query
+proc twitter_query {url account {query_list {}} {method {}}} {
+	# Uses POST for any query
+	if {$method == ""} {
+		if {$query_list == ""} {
+			set method GET
+		} {
+			set method POST
+		}
+	}
+	if {$method == "GET" && $query_list == ""} {
+		append url ?
+		append url [http::formatQuery {*}$query_list]
+	}
+
+	# Requests
+	set token [twitter_token $account]
+	if {$token == ""} {
+		error "Unidentified Twitter account: $account"
+	} {
+		set reply [oauth::query_api $url {*}[registry get twitter.oauth.consumer] $method {*}$token $query_list]
+		json::json2dict $reply
+	}
+}
+
 #.identica
 proc dcc:identica {handle idx arg} {
 	
@@ -153,24 +244,73 @@ proc dcc:identica {handle idx arg} {
 
 #!idee
 proc pub:idee {nick uhost handle chan text} {
-	identicapublish ideedarticles $nick $text
+	twitterpublish ideedarticles $nick $text
 }
 
-#!pub !identica or !twit
-#The account is channel dependant
+#!identica
 proc pub:identica {nick uhost handle chan text} {
+	putquick "NOTICE $nick :!identica is currently disabled. Is identi.ca still usable since pump.io migration? If so, please request the command."
+}
+
+proc whois {nickname} {
+	# By handle
+	set result [nick2hand $nickname] 
+	if {$result != "*"} {
+		#Will return "", when nick doesn't exist to avoid further processing.
+		return $result
+	}
+
+	#Gets user@host
+	set uhost [getchanhost $nickname]
+	set host [lindex [split $uhost @] 1]
+
+	# By Cloak
+	if {[regexp / $host]} {
+		set cloak [split $host /]
+		set group [lindex $host 0]
+
+		if {$group != "gateway" && $group != "nat"} {
+			# @freenode/staff/ubuntu.member.niko → niko
+			# @wikipedia/pdpc.21for7.elfix → elfix
+			# @wikipedia/poulpy → poulpy
+			return [lindex [split [lindex $cloak end] .] end]
+		}
+	}
+
+	# By NickServ
+	# TODO: code with callback
+
+	# By user@host, when the host doesn't contain any digit
+	if {[regexp {^[^0-9]*$} $host]} {
+		return "$nickname!$uhost"
+	}
+
+	# Can't identify
+	return ""
+}
+
+#!pub or !twit or !tweet
+#The account is channel dependant
+proc pub:twitter {nick uhost handle chan text} {
 	if {$chan == "#wikipedia-fr"} {
 		set account wikipediafr
+		set who [whois $nick]
+		if {$who == ""} {
+			putquick "NOTICE $nick :Pour utiliser !pub sur $chan, vous devez disposer d'un cloak projet ou unaffiliated, être connecté depuis un host sans chiffre ou encore avoir votre user@host reconnu par mes soins."
+			return 0
+		} {
+			append text " —$who"
+		}
 	} elseif {$chan == "#wolfplex"} {
 		set account wolfplex
 	} {
-		putquick "NOTICE $nick :!pub n'est pas activ� �sur $chan"
+		putquick "NOTICE $nick :!pub n'est pas activé sur le canal $chan"
 		return
 	}
-	identicapublish $account $nick $text
+	twitterpublish $account $nick $text
 }
 
-proc identicapublish {account nick text} {
+proc twitterpublish {account nick text} {
 	if {$text == ""} {
 		putquick "NOTICE $nick :Syntaxe : !pub <texte à publier sur identi.ca et Twitter>"
 		return
@@ -180,9 +320,12 @@ proc identicapublish {account nick text} {
 		putquick "NOTICE $nick :140 caractères max, là il y en a $len."
 		return
 	}
-	identicapost $account $text
-	putquick "NOTICE $nick :Publié sur identi.ca"
-	return 1
+	if [twitterpost $account $text] {
+		putquick "NOTICE $nick :Publié sur Twitter"
+		return 1
+	} {
+		putquick "NOTICE $nick :Non publié, une erreur a eu lieu."
+	}
 }
 
 #
