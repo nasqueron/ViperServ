@@ -528,8 +528,6 @@ proc tc2:command:nginx {requester arg} {
 			#.nginx server edit <domain> <+php|-php>
 			set subcommand [lindex $arg 1]
 			set domain [lindex $arg 2]
-
-			putdebug "if $subcommand != {} && $domain != {} && \[tc2:isdomain $domain\]"
 			
 			if {$subcommand != "" && $domain != "" && [tc2:isdomain $domain]} {
 				set fulldomain $domain
@@ -593,7 +591,7 @@ proc tc2:command:nginx {requester arg} {
 							exec -- chown $user $wwwdir
 						}
 						if ![file exists $logdir] {
-							exec -- mkdir -m 0711 Ti-p $wwwdir
+							exec -- mkdir -m 0711 -p $wwwdir
 							exec -- chown $user $wwwdir
 						}
 
