@@ -1,4 +1,4 @@
-# .tcl source scripts/Nasqueron/Bugzilla.tcl
+# .tcl source scripts/Daeghrefn/Bugzilla.tcl
 
 package require XMLRPC
 package require SOAP

@@ -1,4 +1,4 @@
-# .tcl source scripts/Nasqueron/MediaWiki.tcl
+# .tcl source scripts/Daeghrefn/MediaWiki.tcl
 #
 # MediaWiki RC 
 #

@@ -15,8 +15,8 @@ proc onload {} {
 	unloadmodule channels
 	unloadmodule server
 
-	#Links to Nasqueron
-	link Nasqueron
+	#Links to master bot
+	link Daeghrefn
 }
 
 #Every minute

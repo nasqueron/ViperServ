@@ -1,4 +1,4 @@
-# .tcl source scripts/Nasqueron/Last.fm.tcl
+# .tcl source scripts/Daeghrefn/Last.fm.tcl
 
 package require http
 package require json
