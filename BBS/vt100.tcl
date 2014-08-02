@@ -3,6 +3,7 @@
 #
 
 listen [registry get bbs.vt100.port] script listen:vt100
+set protect-telnet 0
 
 proc listen:vt100 {newidx} {
 	putcmdlog "Serving vt100 for idx $newidx."

@@ -2,6 +2,7 @@ bind dcc  -  antidater	 dcc:antidater
 bind dcc  -  postdater	 dcc:postdater
 bind dcc  -  days	 dcc:days
 bind dcc  -  quux        dcc:quux
+bind dcc  -  paypal	 dcc:paypal
 
 #
 # Dates calculation
@@ -178,4 +179,21 @@ proc dcc:quux {handle idx arg} {
 	putdcc $idx "Published under QX[quux::add [getuserid $idx] $category $content]"
 	putcmdlog "#$handle# quux ..."
 	return 0
+}
+
+#
+# Paypal calculation
+#
+
+namespace eval ::paypal {
+	# -rate% - 0.35 €
+	# Default rate: 3.4% for EU
+	proc gross2net {net {rate 3.4}} {
+		format %0.2f [expr ($net - 0.35) / (100 + $rate) * 100]
+	}
+
+	# +rate% + 0.35 €
+	proc net2gross {gross {rate 3.4}} {
+		format %0.2f [expr $gross * (100 + $rate) / 100 + 0.35]
+	}
 }

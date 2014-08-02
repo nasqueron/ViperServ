@@ -1,8 +1,8 @@
 # .tcl source scripts/Nasqueron/Bugzilla.tcl
 
+package require XMLRPC
 package require SOAP
 package require rpcvar
-
 package require http
 package require tls
 http::register https 443 ::tls::socket

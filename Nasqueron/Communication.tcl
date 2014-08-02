@@ -10,6 +10,7 @@ bind pub  - !twit	pub:twitter
 bind pub  - !tweet	pub:twitter
 bind pub  - !idee	pub:idee
 bind pub  - !idees	pub:idee
+bind pub  - !idée       pub:idee
 
 #
 # SMS
@@ -244,6 +245,12 @@ proc dcc:identica {handle idx arg} {
 
 #!idee
 proc pub:idee {nick uhost handle chan text} {
+	set who [whois $nick]
+	if {$who == ""} {
+		append text " — via IRC."
+	} {
+		append text " — $who, via IRC."
+	}
 	twitterpublish ideedarticles $nick $text
 }
 
@@ -267,7 +274,7 @@ proc whois {nickname} {
 	# By Cloak
 	if {[regexp / $host]} {
 		set cloak [split $host /]
-		set group [lindex $host 0]
+		set group [lindex $cloak 0]
 
 		if {$group != "gateway" && $group != "nat"} {
 			# @freenode/staff/ubuntu.member.niko → niko

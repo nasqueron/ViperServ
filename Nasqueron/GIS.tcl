@@ -28,7 +28,7 @@ namespace eval fantoir {
 				set count_voies 0
 			}
 			set count_voies [string trim $count_voies]
-			append reply "(dont $count_voies voie[s $count_voies])"
+			append reply " (dont $count_voies voie[s $count_voies])"
 		} {
 			return $reply
 		}

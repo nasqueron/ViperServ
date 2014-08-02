@@ -198,6 +198,7 @@ namespace eval ::gerrit:: {
 			set type [dict get $event type]
 			#todo: handle here multiservers
 			if { [catch { callevent wmreview $type $event } err] } {
+				global errorInfo
 				putdebug "A general error occured during the Gerrit event processing."
 				putdebug $errorInfo
 			}
@@ -235,7 +236,7 @@ namespace eval ::gerrit:: {
 		#        The callback procedure arguments varie with the type.
 		#
 		#        patchset-created ... server change patchSet uploader
-		#        change-abandoned ... server change patchSet abandoner
+		#        change-abandoned ... server change patchSet abandoner reason 
 		#        change-restored .... server change patchSet restorer
 		#        change-merged ...... server change patchSet submitter
 		#        comment-added ...... server change patchSet author approvals comment
@@ -255,7 +256,9 @@ namespace eval ::gerrit:: {
 			foreach procname [dict get $gerrit::events all] {
 				if [catch {$procname $server $type $message} err] {
 					putdebug "An error occured in $procname (called by a $type event):"
+					global errorInfo
 					putdebug $errorInfo
+					putdebug $message
 				}
 			}
 		}
@@ -264,7 +267,7 @@ namespace eval ::gerrit:: {
 			# Determines the proc arguments from the Gerrit message type
 			switch $type {
 				"patchset-created" { set params "change patchSet uploader" }
-				"change-abandoned" { set params "change patchSet abandoner" }
+				"change-abandoned" { set params "change patchSet abandoner reason" }
 				"change-restored" { set params "change patchSet restorer" }
 				"change-merged" { set params "change patchSet submitter" }
 				"comment-added" { set params "change patchSet author approvals comment" }
@@ -289,8 +292,10 @@ namespace eval ::gerrit:: {
 			# Calls callbacks procs
 			foreach procname [dict get $gerrit::events $type] {
 				if [catch {$procname {*}$args} err] {
+					global errorInfo
 					putdebug "An error occured in $procname (called by a $type event):"
 					putdebug $errorInfo
+					putdebug $message
 				}
 			}
 		}
@@ -332,13 +337,37 @@ namespace eval ::gerrit:: {
 			# Activity feed
 			set email [dict get $uploader email]
 			set item "	<item type=\"patchset\">
+		<date>[unixtime]</date>
 		<user email=\"$email\">$who</user>
 		<project>$project</project>
 		<branch>$branch</branch>
 		<topic>$topic</topic>
-		<change id=\"$id\">$subject</change>
+		<change id=\"$id\">[xmlescape $subject]</change>
 	</item>"
 			writeActivityFeeds $email $project $item
+	}
+
+	proc onChangeAbandoned {server change patchSet abandoner reason} {
+                if {$server == "wmreview"} {
+			foreach var "id project branch topic subject" { set $var [dg $change $var] }
+			set itemBase "
+		<date>[unixtime]</date>
+		<user email=\"[dg $abandoner email]\">[dg $abandoner name]</user>
+		<project>$project</project>
+		<branch>$branch</branch>
+		<topic>$topic</topic>
+		<change id=\"$id\">[xmlescape $subject]</change>
+		<message>$reason</message>"
+			set item "\t<item type=\"abandon\">$itemBase\n\t</item>"
+			set itemMerged "\t<item type=\"abandoned\">\n\t\t<owner email=\"[dg $change owner.email]\">[dg $change owner.name]</owner>$itemBase\n\t</item>"
+
+			set dir [registry get gerrit.feeds.path]
+			writeActivityFeed $dir/user/[guidmd5 [dg $abandoner email]].xml $item
+			if {[dg $change owner.email] != [dg $abandoner email]} {
+				writeActivityFeed $dir/user/[guidmd5 [dg $change owner.email]].xml $itemMerged
+			}
+			writeActivityFeed $dir/project/[string map {/ . - _} $project].xml $itemMerged
+		}
 	}
 
 	proc onCommentAdded {server change patchset author approvals comment} {
@@ -396,10 +425,11 @@ namespace eval ::gerrit:: {
 			set message [string map [list $verb $plainVerb] $message]
 			set email [dict get $author email]
 			set item "	<item type=\"comment\">
+		<date>[unixtime]</date>
 		<user email=\"$email\">$who</user>
 		<project>$project</project>
-		<change id=\"$id\">$subject</change>
-		<message cr=\"$CR\">$comment</message>
+		<change id=\"$id\">[xmlescape $subject]</change>
+		<message cr=\"$CR\">[xmlescape $comment]</message>
 	</item>"
 			writeActivityFeeds $email $project $item
 		}
@@ -410,11 +440,12 @@ namespace eval ::gerrit:: {
                 if {$server == "wmreview" && [dg $submitter name] != "L10n-bot"} {
 			foreach var "id project branch topic subject" { set $var [dg $change $var] }
 			set itemBase "
+		<date>[unixtime]</date>
 		<user email=\"[dg $submitter email]\">[dg $submitter name]</user>
 		<project>$project</project>
 		<branch>$branch</branch>
 		<topic>$topic</topic>
-		<change id=\"$id\">$subject</change>\n"
+		<change id=\"$id\">[xmlescape $subject]</change>\n"
 			set approvals [approvals $server $id]
 			append itemBase [gerrit::approvals2xml $approvals 2 1]
 			set item "\t<item type=\"merge\">$itemBase\n\t</item>"
@@ -552,3 +583,4 @@ gerrit::event all gerrit::stats
 gerrit::event patchset-created gerrit::onNewPatchset
 gerrit::event comment-added gerrit::onCommentAdded
 gerrit::event change-merged gerrit::onChangeMerged
+gerrit::event change-abandoned gerrit::onChangeAbandoned

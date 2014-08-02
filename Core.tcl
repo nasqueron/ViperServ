@@ -29,7 +29,7 @@ proc numberSign {number} {
 #TODO: keep this method for French (ie NOT adjusting values for English)
 #      and grab the plural proc from wiki.tcl.tk for English.
 proc s {count} {
-	if {$count >= 2 || $count <= 2} {return "s"}
+	if {$count >= 2 || $count <= -2} {return "s"}
 }
 
 #
@@ -338,6 +338,23 @@ proc truncate_first_word {string} {
         set pos [string first " " $string]
         if {$pos == -1} return
         string range $string $pos+1 end
+}
+
+proc xmlescape {text} {
+	#Determines if we should use <![CDATA[]]>
+	set useCDATA 0
+	if {[string first < $text] > -1 || [string first > $text] > -1} {
+		set useCDATA 1
+	}
+	#TODO: check if there is no other case for CDATA
+	#      check when to use CDATA instead &lt; &gt;
+
+	#Output
+	set text [string map {& {&amp;} ' {&apos;} {"} {&quot;}} $text]
+	if {$useCDATA} {
+		return "<!\[CDATA\[$text]]>"
+	}
+	return $text
 }
 
 #
