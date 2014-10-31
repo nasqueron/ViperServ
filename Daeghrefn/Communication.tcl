@@ -247,9 +247,9 @@ proc dcc:identica {handle idx arg} {
 proc pub:idee {nick uhost handle chan text} {
 	set who [whois $nick]
 	if {$who == ""} {
-		append text " — via IRC."
+		append text " -- via IRC."
 	} {
-		append text " — $who, via IRC."
+		append text " -- $who, via IRC."
 	}
 	twitterpublish ideedarticles $nick $text
 }
