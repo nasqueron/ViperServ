@@ -32,6 +32,23 @@ proc s {count} {
 	if {$count >= 2 || $count <= -2} {return "s"}
 }
 
+proc isnotasciiutf8char {char} {
+    regexp {(?x)
+      [\xC0-\xDF] [\x80-\xBF] |    # Two-byte chars (\u0080-\u07FF)
+      [\xE0-\xEF] [\x80-\xBF]{2} | # Three-byte chars (\u0800-\uFFFF)
+      [\xF0-\xF4] [\x80-\xBF]{3}   # Four-byte chars (U+10000-U+10FFFF, not suppoted by Tcl 8.5)
+    } $char
+}
+
+proc isutf8char {char} {
+    regexp {(?x)
+      [\x00-\x7F] |                # Single-byte chars (ASCII range)
+      [\xC0-\xDF] [\x80-\xBF] |    # Two-byte chars (\u0080-\u07FF)
+      [\xE0-\xEF] [\x80-\xBF]{2} | # Three-byte chars (\u0800-\uFFFF)
+      [\xF0-\xF4] [\x80-\xBF]{3}   # Four-byte chars (U+10000-U+10FFFF, not suppoted by Tcl 8.5)
+    } $char
+}
+
 #
 # Dictionaries
 #
@@ -431,4 +448,105 @@ proc guidmd5 {str} {
 		append output [string index $md5 $i]
 	}
 	return $output
+}
+
+#
+# Run interactive commands with callbacks
+#
+
+# Uses fileevent example code by Bryan Oakley
+# http://stackoverflow.com/a/172061/1930997
+#
+# e.g. proc put_command_callback {fd line state} { put[lindex $state 0] [lindex $state 1] $line }
+#
+#      run_command "pwd" put_command_callback {dcc 12}
+#      run_command "pwd" put_command_callback {quick "#foo"}
+#
+#      (we provide a more generic print_command_callback procedure for this general use.)
+
+# Callback to print non interactive commands output in partyline, debug, channel or query
+#
+# @param $fd File descriptor of the command (not used)
+# @param $line Line printed by the command result
+# @param $state A list of two items, the first the mode, the second the target
+#
+# Accepted modes and matched target descriptions:
+# - bot: target is another linked bot. A third optional state parameter could be the bot command.
+# - quick/serv/help: target is a channel or a nick (through a private message)
+# - notice: target is a nick (through a notice, sent in the putserv queue)
+# - dcc: target is the dcc connection IDX
+# - debug: prints the line as debug, target is ignored
+proc print_command_callback {fd line state} {
+    foreach "mode target" $state {}
+    switch $mode {
+        bot {
+            if {[llength $state] > 2} {
+                  set cmd [lindex $state 2]
+                  putbot $target $cmd $line
+            } {
+                  putbot $target $line
+            }
+        }
+        dcc     { putdcc $target $line }
+        quick   { putquick "PRIVMSG $target :$line" }
+        serv    { putserv  "PRIVMSG $target :$line" }
+        help    { puthelp  "PRIVMSG $target :$line" }
+        notice  { putserv  "NOTICE  $target :$line" }
+        debug   { putdebug $line }
+        default { putdebug "Unknown message mode: $mode (line were $line)" }
+    }
+}
+
+# Runs a command, opens a file descriptor to communicate with the process
+#
+# @param $cmd the command to run
+# @param $callbackProc a callback proc to handle the command output and send input
+# @param $state a state object to send to the callback proc
+proc run_command {cmd callbackProc state} {
+    set fd [open "| $cmd" r]
+    fconfigure $fd -blocking false
+    fileevent $fd readable [list interactive_command_handler $fd $callbackProc $state]
+}
+
+# Closes a command
+#
+# @param $fd File descriptor to the command process
+proc close_interactive_command {fd} {
+    fconfigure $fd -blocking true
+    if {[catch {close $fd} err]} {
+        putdebug $err
+    }
+}
+
+# Callback for fileevent to handle command output and state
+#
+# @param $fd File descriptor to the command process
+# @param $callbackProc a callback proc to handle the command output and send input
+# @param $state a state object to send to the callback proc
+proc interactive_command_handler {fd callbackProc {state ""}} {
+    set status [catch {gets $fd line} result]
+    if { $status != 0 } {
+        # unexpected error
+        putdebug "Unexpected error running command: "$result
+        close_interactive_command $fd
+    } elseif {$result >= 0} {
+	$callbackProc $fd $line $state
+    } elseif {[eof $fd]} {
+        close_interactive_command $fd
+    } elseif {[fblocked $f]} {
+        # Read blocked, so do nothing
+    }
+}
+
+proc posix_escape {name} {
+    foreach char [split $name {}] {
+      switch -regexp $char {
+        {'}           {append escaped \\'     }
+        {[[:alnum:]]} {append escaped $char   }
+        {[[:space:]]} {append escaped \\$char }
+        {[[:punct:]]} {append escaped \\$char }
+        default       {append escaped '$char' }
+      }
+    }
+    return $escaped
 }

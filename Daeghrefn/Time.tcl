@@ -14,7 +14,7 @@ proc cron:minute {minute hour day month weekday} {
 #Every 5 minutes
 proc cron:often {minute hour day month weekday} {
 	sqlrehash
-	regenerate_gerrit_index
+#	regenerate_gerrit_index
 }
 
 #Every hour
