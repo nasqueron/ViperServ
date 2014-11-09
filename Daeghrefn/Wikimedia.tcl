@@ -2,6 +2,8 @@ bind pub -  .config	pub:config
 bind dcc -   config	dcc:config
 bind pub D  .+surname   pub:surname
 bind dcc D   +surname   dcc:surname
+bind pub D  .+nom       pub:surname
+bind dcc D   +nom       dcc:surname
 bind pub D  .+prenom    pub:givenname
 bind dcc D   +prenom    dcc:givenname
 bind pub D  .+givenname pub:givenname
