@@ -1,5 +1,3 @@
-package require http
-
 bind pub  - !open	pub:open
 bind pub  - !ouvert	pub:open
 bind pub  - !close	pub:close
@@ -16,7 +14,6 @@ proc pub:close {nick uhost handle chan text} {
 }
 
 proc setisopen {status} {
-	package require http
 	set query [::http::formatQuery oldid 0 wpTextbox1 $status wpSave Publier]
 	set url "http://www.wolfplex.org/w/index.php?title=Mod%C3%A8le:IsOpen/status&action=edit"
 	set tok [::http::geturl $url -query $query]

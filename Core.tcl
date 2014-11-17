@@ -1,4 +1,13 @@
 #
+# HTTP support
+#
+
+package require http
+package require tls
+::tls::init -ssl2 false -ssl3 false -tls1 true
+::http::register https 443 ::tls::socket
+
+#
 # TCL helpers
 #
 
@@ -280,12 +289,6 @@ proc geturls {text} {
 
 #Reads specified URL and returns content
 proc geturltext {url {trim 1}} {
-	package require http
-	if {[string range [string tolower $url] 0 5] == "https:"} {
-		package require tls
-		http::register https 443 tls::socket
-	}
-	
 	set fd [http::geturl $url]
 	set text [http::data $fd]
 	http::cleanup $fd

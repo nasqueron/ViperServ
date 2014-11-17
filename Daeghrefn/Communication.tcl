@@ -1,5 +1,3 @@
-package require http
-
 bind dcc  -  sms	dcc:sms
 bind dcc  -  mail	dcc:mail
 bind dcc  -  twitter	dcc:twitter
@@ -34,7 +32,6 @@ proc sendsms {from to message} {
 			}
 
 			#Posts form
-			package require http
 			set query [::http::formatQuery m $from p $message v $pass envoi Envoyer]
 			if {$xtra != ""} {append query &$xtra}
 			set tok [::http::geturl $url -query $query]
@@ -139,7 +136,6 @@ proc pub:sms {nick uhost handle chan text} {
 
 #Posts $message on the identi.ca $account account
 proc identicapost {account message} {
-	package require http
 	package require base64
 	set row [lindex [sql "SELECT account_username, account_password FROM identica_accounts WHERE account_code = '$account'"] 0]
 	set auth "Basic [base64::encode [join $row :]]"

@@ -41,15 +41,11 @@
 #   - example call: puts [oauth::query_api http://api.twitter.com/1/statuses/update.json <key> <secret> POST $oauth_token_done $oauth_token_secret_done [list status "does it work"]]
 #
 
-package require http
 # tcllib packages
 package require base64
 package require sha1
-package require tls
 
 package provide oauth 0.1
-
-http::register https 443 ::tls::socket
 
 namespace eval oauth {
 	variable request_token_url https://api.twitter.com/oauth/request_token

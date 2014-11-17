@@ -1,6 +1,5 @@
 # .tcl source scripts/Daeghrefn/Last.fm.tcl
 
-package require http
 package require json
 
 bind dcc - lastfm dcc:lastfm
