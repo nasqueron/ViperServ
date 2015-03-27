@@ -243,9 +243,9 @@ proc dcc:identica {handle idx arg} {
 proc pub:idee {nick uhost handle chan text} {
 	set who [whois $nick]
 	if {$who == ""} {
-		append text " -- via IRC."
+		append text " – via IRC."
 	} {
-		append text " -- $who, via IRC."
+		append text " – $who, via IRC."
 	}
 	twitterpublish ideedarticles $nick $text
 }
@@ -302,7 +302,7 @@ proc pub:twitter {nick uhost handle chan text} {
 			putquick "NOTICE $nick :Pour utiliser !pub sur $chan, vous devez disposer d'un cloak projet ou unaffiliated, être connecté depuis un host sans chiffre ou encore avoir votre user@host reconnu par mes soins."
 			return 0
 		} {
-			append text " —$who"
+			append text " — $who"
 		}
 	} elseif {$chan == "#wolfplex"} {
 		set account wolfplex
