@@ -7,8 +7,7 @@ bind pubm - "#wolfplex *"	pubm:url
 
 #Determines if the URL matches a video site url:getvideotitle can handle
 proc url:isvideo {url} {
-	#We use grep "_VALID_URL =" /usr/local/bin/youtube-dl for this list
-	foreach site "youtu.be metacafe.com dailymotion video.google.com photobucket.com video.yahoo.com youtube.com depositfiles.com" {
+	foreach site "youtu.be metacafe.com dailymotion video.google.com photobucket.com video.yahoo.com youtube.com depositfiles.com vimeo.com" {
 		if {[string first $site $url] > -1} {
 			return 1
 		}
@@ -40,4 +39,3 @@ proc pubm:url {nick uhost handle channel text} {
 		}
 	}
 }
-
