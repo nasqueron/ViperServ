@@ -214,7 +214,7 @@ proc tc2:sshaddkey {username key} {
 #Guesses web user from requester or domain
 proc tc2:guesswebuser {requester domain} {
 	set alphanumdomain [regsub -all {([^[:alnum:]])} [string range $domain 0 [string last . $domain]-1] ""]
-	foreach candidate [list $domain [string tolower $domain] $alphanumdomain  $requester [string tolower $requester]] {
+	foreach candidate [list $domain [string tolower $domain] $alphanumdomain $requester [string tolower $requester]] {
 		if {[tc2:username_isvalid $candidate] && [tc2:username_exists $candidate]} {
 			return $candidate
 		}
