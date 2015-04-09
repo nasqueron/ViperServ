@@ -780,7 +780,7 @@ proc tc2:command:ci {requester arg} {
 	set command [lindex $arg 0]
 
 	switch $command {
-		"start {
+		"start" {
 			list 0 [string range "use /usr/local/etc/rc.d/jenkins onestart" 0 end]
 		}
 
