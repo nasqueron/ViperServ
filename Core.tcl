@@ -553,3 +553,10 @@ proc posix_escape {name} {
     }
     return $escaped
 }
+
+# Returns absolute path to external script
+proc get_external_script {script} {
+	global env
+	set path $env(HOME)/bin/
+	append path $script
+}

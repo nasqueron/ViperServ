@@ -39,7 +39,7 @@ proc dcc:surname {handle idx arg} {
 # @param $title the item title
 # @param $state the state to pass to the create command callback (here with a mode and a target to print result)
 proc create_surname {title state} {
-	run_command "create_surname [posix_escape $title]" print_command_callback $state
+	run_command "[get_external_script create_surname] [posix_escape $title]" print_command_callback $state
 }
 
 # Handles .+givenname command
@@ -103,7 +103,7 @@ proc dcc:givenname {handle idx arg} {
 # @param $title the item title
 # @param $state the state to pass to the create command callback (here with a mode and a target to print result)
 proc create_givenname {title genre state} {
-	run_command "create_given_name [posix_escape $title] $genre" print_command_callback $state
+	run_command "[get_external_script create_given_name] [posix_escape $title] $genre" print_command_callback $state
 }
 
 # Determines if the specified title is suitable to pass as shell argument
