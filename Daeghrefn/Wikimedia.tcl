@@ -6,6 +6,8 @@ bind pub D  .+nom       pub:surname
 bind dcc D   +nom       dcc:surname
 bind pub D  .+prenom    pub:givenname
 bind dcc D   +prenom    dcc:givenname
+bind pub D  .+prénom    pub:givenname
+bind dcc D   +prénom    dcc:givenname
 bind pub D  .+givenname pub:givenname
 bind dcc D   +givenname dcc:givenname
 
