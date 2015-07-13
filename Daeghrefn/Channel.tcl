@@ -1,5 +1,6 @@
 # #wolfplex
 bind pubm - "#wolfplex *"	pubm:url
+bind pubm - "#fauve *"		pubm:url
 
 #
 # URL management
