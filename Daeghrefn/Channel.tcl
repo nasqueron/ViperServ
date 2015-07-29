@@ -1,6 +1,7 @@
 # #wolfplex
 bind pubm - "#wolfplex *"	pubm:url
 bind pubm - "#fauve *"		pubm:url
+bind sign - "#wikipedia-fr *!*@*" sign:excessflood
 
 #
 # URL management
@@ -38,5 +39,42 @@ proc pubm:url {nick uhost handle channel text} {
 				putserv "PRIVMSG $channel :$info"
 			}
 		}
+	}
+}
+
+#
+# #wikipedia-fr botnet mitigation
+#
+
+proc isbotnetsuspecthost {host} {
+	if [isip $host] {
+		return 1
+	}
+	foreach domain [registry get protection.botnet.hosts] {
+		if [string match $domain $host] {
+			return 1
+		}
+	}
+	return 0
+}
+
+proc sign:excessflood {nick uhost handle channel reason} {
+	global botname
+
+	# We're interested by unknown users quitting with Excess Flood message.
+	if {$reason != "Excess Flood" || [nick2hand $nick] != "*"} {
+		return
+	}
+
+	# Botnet nicks have 3 to 5 characters
+	set len [strlen $nick]
+	if {$len < 3 || $len > 5} {
+		return
+	}
+
+	# And belong to specific ISPs
+	set host [gethost $uhost]
+	if [isbotnetsuspecthost $host] {
+		newchanban $channel *!*@$host $botname [registry get protection.botnet.banreason] [registry get protection.botnet.banduration] sticky
 	}
 }

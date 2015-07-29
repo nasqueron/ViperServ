@@ -560,3 +560,89 @@ proc get_external_script {script} {
 	set path $env(HOME)/bin/
 	append path $script
 }
+
+#
+# IP and host string manipulations
+#
+
+# Gets the host part of a [nick!]user@host string
+proc gethost {uhost} {
+	set pos [string first @ $uhost]
+	if {$pos == -1} {
+		return ""
+	}
+	string range $uhost [expr $pos + 1] end
+}
+
+# Determines if the specified string is a valid IPv4 address
+proc isipv4 {string} {
+	# http://wiki.tcl.tk/989 - Michael A. Cleverly
+	set octet {(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])}
+	regexp -- "^[join [list $octet $octet $octet $octet] {\.}]\$" $string
+
+}
+
+# Determines if the specified string is a valid IPv6 address
+proc isipv6 {string} {
+	#
+	# NOTE: 2001:0db8:0000:0000:0000:0000:1428:57ab
+	#				2001:0db8:0000:0000:0000::1428:57ab
+	#				2001:0db8:0:0:0:0:1428:57ab
+	#				2001:0db8:0:0::1428:57ab
+	#				2001:0db8::1428:57ab
+	#				2001:db8::1428:57ab
+	#				2001:0db8:0000:0000:0000:0000:<IPv4>
+	#				::1
+	#				::
+	#
+	if {$string eq "::"} then {
+		return true
+	}
+
+	if {[string range $string 0 1] == "::"} then {
+		set string [string range $string 1 end]
+	}
+
+	if {[string range $string end-1 end] == "::"} then {
+		set string [string range $string 0 end-1]
+	}
+
+	set octets [split $string :]
+	set llength [llength $octets]
+
+	if {$llength > 0 && $llength <= 8} then {
+		set last [expr {$llength - 1}]
+
+		for {set index 0} {$index < $llength} {incr index} {
+			set octet [lindex $octets $index]
+			set length [string length $octet]
+
+			if {$length == 0} then {
+				if {![info exists null]} then {
+					set null $index; continue
+				} else {
+					return false
+				}
+			}
+
+			if {$length <= 4 && [string is xdigit -strict $octet]} then {
+				continue
+			}
+
+			if {$llength <= 7 && $index == $last && [isipv4 $octet]} then {
+				continue
+			}
+
+			return false
+		}
+
+		return true
+	}
+
+	return false
+}
+
+# Determines if the specified string is a valid IP address
+proc isip {string} {
+	expr [isipv4 $string] || [isipv6 $string]
+}
