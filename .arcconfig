@@ -1,6 +1,6 @@
 {
 	"phabricator.uri": "http://devcentral.nasqueron.org/",
 	"repository.callsign": "VIPERSERV",
-	"history.immutable": "false"
+	"history.immutable": false
 }
 
