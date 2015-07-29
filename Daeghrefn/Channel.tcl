@@ -58,11 +58,20 @@ proc isbotnetsuspecthost {host} {
 	return 0
 }
 
+proc isfloodquitmessage {reason} {
+	foreach floodreason [registry get protection.botnet.reasons] {
+		if [string match $reason $floodreason] {
+			return 1
+		}
+	}
+	return 0
+}
+
 proc sign:excessflood {nick uhost handle channel reason} {
 	global botname
 
 	# We're interested by unknown users quitting with Excess Flood message.
-	if {$reason != "Excess Flood" || [nick2hand $nick] != "*"} {
+	if {![isfloodquitmessage $reason] || $handle != "*"} {
 		return
 	}
 
