@@ -85,5 +85,6 @@ proc sign:excessflood {nick uhost handle channel reason} {
 	set host [gethost $uhost]
 	if [isbotnetsuspecthost $host] {
 		newchanban $channel *!*@$host $botname [registry get protection.botnet.banreason] [registry get protection.botnet.banduration] sticky
+		sql "INSERT INTO log_flood (host, `count`) VALUES ('[sqlescape $host]', 1) ON DUPLICATE KEY UPDATE `count` = `count` + 1;"
 	}
 }
