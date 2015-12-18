@@ -56,11 +56,16 @@ namespace eval notifications {
 			lappend params [dict get $notification $field]
 		}
 		
+		set matchingBinds 0
 		foreach bind [binds] {
 			if {[is_matching_notification_bind $bind $notification]} {
 				set callback [lindex $bind 4]
 				$callback {*}$params
+				incr matchingBinds
 			}
+		}
+		if {$matchingBinds == 0} {
+			putdebug "No bind for queue $queue message $message"
 		}
 	}
 
@@ -74,6 +79,7 @@ namespace eval notifications {
 				docker { return "#nasqueron-ops" }
 				ops { return "#nasqueron-ops" }
 				orgz { return "#nasqueron-ops" }
+				nasqueron { return "#nasqueron-logs" }
 				default {
 					putdebug "Message for unknown group: $project $group"
 					return "#nasqueron-logs"
