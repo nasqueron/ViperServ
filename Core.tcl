@@ -17,6 +17,15 @@ proc proc_exists {proc} {
 }
 
 #
+# Loop constructs
+#
+
+# http://wiki.tcl.tk/3603
+proc do {code while cond} {
+    tailcall try $code\n[list $while $cond $code]
+}
+
+#
 # Trivial procs
 #
 
