@@ -16,6 +16,11 @@ proc proc_exists {proc} {
 	expr {[info procs $proc] == $proc}
 }
 
+
+proc is_package_present {package} {
+	expr ![catch {package present $package}]
+}
+
 #
 # Loop constructs
 #
