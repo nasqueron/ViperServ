@@ -28,8 +28,26 @@ namespace eval broker {
 		utimer 4 [namespace current]::on_tick
 	}
 
+	# Determines if we're in a risk to receive a SIGCHLD while the broker intercepts signals
+	#
+	# @param time The specified unixtime, or the current one if omitted
+	# @return 1 if the risk is there, 0 if it shouldn't be risky
+	proc near_SIGCHLD_arrival {{time ""}} {
+		if {$time == ""} {
+			set time [clock seconds]
+		}
+		set timePosition [expr $time % 300]
+		expr $timePosition == 0 || $timePosition == 299
+	}
+
 	proc on_tick {} {
-		get_messages
+		if {![near_SIGCHLD_arrival]} {
+			# We generally want to get messages, but not
+			# when the SIGCHLD signal is sent to the bot
+			# which seems to be every five minutes.
+
+			get_messages
+		}
 		utimer 1 [namespace current]::on_tick
 	}
 
