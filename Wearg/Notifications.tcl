@@ -76,8 +76,8 @@ namespace eval notifications {
 		if {$project == "Nasqueron"} {
 			switch $group {
 				tasacora { return "#tasacora" }
-				docker { return "#nasqueron-ops" }
-				ops { return "#nasqueron-ops" }
+				docker { return "#nasqueron-ops-logs" }
+				ops { return "#nasqueron-ops-logs" }
 				orgz { return "#nasqueron-ops" }
 				nasqueron { return "#nasqueron-logs" }
 				default {
@@ -100,11 +100,11 @@ namespace eval notifications {
 			append message " — $link"
 		}
 
-		if {$type == "push" || $type == "ping" || $type == "repository" || $type == "create"} {
+		if {$service == "Phabricator" || $type == "push" || $type == "ping" || $type == "repository" || $type == "create" || $type == "status"} {
 			putquick "PRIVMSG $channel :$message"
 		} {
 			# These probably need some love on the notifications center
-			putdebug "Message for $channel: $message"
+			putdebug "Message for $channel: $message (service: $service, type: $type)"
 		}
 	}
 }
