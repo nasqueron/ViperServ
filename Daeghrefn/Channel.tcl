@@ -36,7 +36,7 @@ proc pubm:url {nick uhost handle channel text} {
 			#if it's not already in $text
 			set info [url:getvideotitle $url]
 			if {[string first $info $text] == -1} {
-				putserv "PRIVMSG $channel :$info"
+				putserv "PRIVMSG $channel :\[Vid\] $info"
 			}
 		}
 	}
