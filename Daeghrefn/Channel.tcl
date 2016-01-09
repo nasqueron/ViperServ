@@ -35,7 +35,7 @@ proc pubm:url {nick uhost handle channel text} {
 			#Prints video information on the channel
 			#if it's not already in $text
 			set info [url:getvideotitle $url]
-			if {[string first $info $text] == -1} {
+			if {[string length [string trim $info]] > 0 && [string first $info $text] == -1} {
 				putserv "PRIVMSG $channel :\[Vid\] $info"
 			}
 		}
