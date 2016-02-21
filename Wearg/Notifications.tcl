@@ -73,6 +73,9 @@ namespace eval notifications {
 		if {$project == "Wolfplex"} {
 			return "#wolfplex"
 		}
+		if {$project == "Keruald"} {
+			return "#nasqueron-logs"
+		}
 		if {$project == "Nasqueron"} {
 			switch $group {
 				tasacora { return "#tasacora" }
