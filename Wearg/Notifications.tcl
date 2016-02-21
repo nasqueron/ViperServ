@@ -79,8 +79,8 @@ namespace eval notifications {
 		if {$project == "Nasqueron"} {
 			switch $group {
 				tasacora { return "#tasacora" }
-				docker { return "#nasqueron-ops-logs" }
-				ops { return "#nasqueron-ops-logs" }
+				docker { return "#nasqueron-ops" }
+				ops { return "#nasqueron-ops" }
 				orgz { return "#nasqueron-ops" }
 				nasqueron { return "#nasqueron-logs" }
 				default {
