@@ -104,11 +104,6 @@ namespace eval notifications {
 			append message " — $link"
 		}
 
-		if {$service == "Phabricator" || $type == "push" || $type == "ping" || $type == "repository" || $type == "create" || $type == "status"} {
-			putquick "PRIVMSG $channel :$message"
-		} {
-			# These probably need some love on the notifications center
-			putdebug "Message for $channel: $message (service: $service, type: $type)"
-		}
+		putquick "PRIVMSG $channel :$message"
 	}
 }
