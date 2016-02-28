@@ -82,6 +82,7 @@ namespace eval notifications {
 				docker { return "#nasqueron-ops" }
 				ops { return "#nasqueron-ops" }
 				orgz { return "#nasqueron-ops" }
+				devtools { return "#nasqueron-logs" }
 				nasqueron { return "#nasqueron-logs" }
 				default {
 					putdebug "Message for unknown group: $project $group"
