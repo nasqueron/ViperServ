@@ -226,8 +226,15 @@ proc registry {command key {value ""}} {
 		}
 
 		"incr" {
+			if {$value == ""} {
+				set term 1
+			} elseif {[string is integer $value]} {
+				set term $value
+			} {
+				error "The increment term must be an integer."
+			}
+
 			set current [registry get $key]
-			if {$value == ""} {set term 1}
 			if {$current == ""} {
 				registry set $key $term
 			} {
