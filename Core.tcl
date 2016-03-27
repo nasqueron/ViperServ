@@ -222,9 +222,7 @@ proc registry {command key {value ""}} {
 		}
 
 		"delete" {
-			set sql "DELETE FROM registry WHERE `data` = '$key'"
-			putdebug $sql
-			sql $sql
+			sql "DELETE FROM registry WHERE `data` = '$key'"
 		}
 
 		"incr" {
