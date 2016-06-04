@@ -1,10 +1,13 @@
 package require json
 
+bind time - "30 *" ::notifications::channel_notify_periodics
+
 namespace eval notifications {
 	proc init {} {
 		::broker::bind [registry get broker.queue.notifications] ::notifications::on_broker_message
 		
 		bind * * * * ::notifications::channel_notify
+		bind "DockerHub" * * * ::notifications::docker_build_summary
 	}
 
 	proc bind {service project group type callback} {
@@ -69,6 +72,10 @@ namespace eval notifications {
 		}
 	}
 
+	proc get_projects {} {
+		registry get notifications.projects
+	}
+
 	proc get_notification_channel {project group} {
 		if {$project == "Wolfplex"} {
 			return "#wolfplex"
@@ -97,7 +104,56 @@ namespace eval notifications {
 		return ""
 	}
 
+	proc get_image_from_docker_payload {payload} {
+		set repository [dict get $payload repository]
+		dict get $repository repo_name
+	}
+
+	proc docker_build_summary {service project group rawContent type text link} {
+		if {$service != "DockerHub" || $type != "push"} {
+			return
+		}
+
+		set image [get_image_from_docker_payload $rawContent]
+		set key notifications.periodics.docker.$project
+
+		set periodicsNotifications [registry get $key]
+		dict incr periodicsNotifications $image
+		registry set $key $periodicsNotifications
+	}
+
+	proc channel_notify_periodics {minutes hours day month year} {
+		foreach project [get_projects] {
+			channel_notify_periodics_for_project $project
+		}
+	}
+
+	proc docker_format_builds {builds} {
+		set first 1
+		foreach "image count" $builds {
+			lappend list "$image (${count}x)"
+		}
+		join $list ", "
+	}
+
+	proc channel_notify_periodics_for_project {project} {
+		set key notifications.periodics.docker.$project
+		set builds [registry get $key]
+		if {$builds == ""} {
+			return
+		}
+
+		set channel [get_notification_channel $project docker]
+		putquick "PRIVMSG $channel :New images pushed to Docker Hub: [docker_format_builds $builds]"
+		registry delete $key
+	}
+
 	proc channel_notify {service project group rawContent type text link} {
+		# T790 - Ignores Docker Hub notification in real time to offer a summary instead
+		if {$service == "DockerHub"} {
+			return
+		}
+
 		set channel [get_notification_channel $project $group]
 		if {$channel == ""} {
 			return
