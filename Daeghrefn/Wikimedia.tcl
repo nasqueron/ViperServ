@@ -55,8 +55,9 @@ proc pub:givenname {nick uhost handle chan arg} {
 			F {}
 			D {}
 			U {}
+			E {set genre U}
 			default {
-				puthelp "PRIVMSG $chan :Attendu : F (féminin), M (masculin), U (unisexe)"
+				puthelp "PRIVMSG $chan :Attendu : F (féminin), M (masculin), U (épicène) — e.g. .+prenom Aude F"
 				return 0
 			}
 		}
@@ -84,8 +85,9 @@ proc dcc:givenname {handle idx arg} {
 			F {}
 			D {}
 			U {}
+			E {set genre U}
 			default {
-				putdcc $idx "Attendu : F (féminin), M (masculin), U (unisexe)"
+				putdcc $idx "Attendu : F (féminin), M (masculin), U (épicène) — e.g. .+prenom Aude F"
 				return 0
 			}
 		}
