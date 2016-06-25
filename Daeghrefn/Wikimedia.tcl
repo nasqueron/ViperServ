@@ -47,7 +47,10 @@ proc create_surname {title state} {
 # Handles .+givenname command
 proc pub:givenname {nick uhost handle chan arg} {
 	set params [split $arg]
-	if {[llength $params] > 1} {
+	if {[llength $params] == 0} {
+		putdcc $idx "Quel prénom ajouter ? e.g. .+prenom Aude F"
+		return 0
+	} elseif {[llength $params] > 1} {
 		set title [lindex $params 0]
 		set genre [string toupper [lindex $params 1]]
 		switch -- $genre {
@@ -77,7 +80,10 @@ proc pub:givenname {nick uhost handle chan arg} {
 # Handles .+givenname command
 proc dcc:givenname {handle idx arg} {
 	set params [split $arg]
-	if {[llength $params] > 1} {
+	if {[llength $params] == 0} {
+		putdcc $idx "Quel prénom ajouter ? e.g. .+prenom Aude F"
+		return 0
+	} elseif {[llength $params] > 1} {
 		set title [lindex $params 0]
 		set genre [string toupper [lindex $params 1]]
 		switch -- $genre {
