@@ -1,22 +1,42 @@
 bind pub -  .config	pub:config
 bind dcc -   config	dcc:config
-bind pub D  .+surname   pub:surname
+bind pub -  .+surname   pub:surname
 bind dcc D   +surname   dcc:surname
-bind pub D  .+nom       pub:surname
+bind pub -  .+nom       pub:surname
 bind dcc D   +nom       dcc:surname
-bind pub D  .+prenom    pub:givenname
+bind pub -  .+prenom    pub:givenname
 bind dcc D   +prenom    dcc:givenname
-bind pub D  .+prénom    pub:givenname
+bind pub -  .+prénom    pub:givenname
 bind dcc D   +prénom    dcc:givenname
-bind pub D  .+givenname pub:givenname
+bind pub -  .+givenname pub:givenname
 bind dcc D   +givenname dcc:givenname
 
 #
 # Wikidata
 #
 
+# Determines if the Wikidata channel is Wikidata specific
+# Wikidata channels allow commands for everyone, not only for D users.
+proc isWikidataChannel {chan} {
+	expr [lsearch [registry get wikidata.channels] $chan] != -1
+}
+
+# Determines if the specified handle on the specified channel
+# is allowed to run a Wikidata comamnd.
+proc areWikidataCommandsAllowed {chan handle} {
+	if {[matchattr $handle D]} {
+		return 1
+	}
+
+	isWikidataChannel $chan
+}
+
 # Handles .+surname command
 proc pub:surname {nick uhost handle chan arg} {
+	if {![areWikidataCommandsAllowed $chan $handle]} {
+		return 0
+	}
+
 	if {[isAcceptableItemTitle $arg]} {
 		create_surname $arg "serv $chan"
 		return 1
@@ -46,6 +66,10 @@ proc create_surname {title state} {
 
 # Handles .+givenname command
 proc pub:givenname {nick uhost handle chan arg} {
+	if {![areWikidataCommandsAllowed $chan $handle]} {
+		return 0
+	}
+
 	set params [split $arg]
 	if {[llength $params] == 0} {
 		putdcc $idx "Quel prénom ajouter ? e.g. .+prenom Aude F"
