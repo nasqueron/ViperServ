@@ -1,11 +1,35 @@
+package require http
+package require tls
+
 #
 # HTTP support
 #
 
-package require http
-package require tls
 ::tls::init -ssl2 false -ssl3 false -tls1 true
 ::http::register https 443 ::tls::socket
+
+# Determines if a specified page's source code contains the specified string
+proc http_contains {pattern url} {
+	try {
+		set fd [::http::geturl $url -timeout 600]
+	} on error {result} {
+		return 0
+	}
+
+	if {[::http::status $fd] != "ok"} {
+		set result 0
+	} elseif {[::http::ncode $fd] != 200} {
+		set result 0
+	} elseif {[string first $pattern [::http::data $fd]] > -1} {
+		set result 1
+	} {
+		set result 0
+	}
+
+	::http::cleanup $fd
+	return $result
+}
+
 
 #
 # TCL helpers
@@ -664,4 +688,34 @@ proc isipv6 {string} {
 # Determines if the specified string is a valid IP address
 proc isip {string} {
 	expr [isipv4 $string] || [isipv6 $string]
+}
+
+###
+### IP helper procedures
+###
+
+# Extracts an IP address from a Freenode cloak
+# Freenode tends to add IPs as suffix for gateway cloaks.
+proc extract_addr_from_cloak {host} {
+	if {[string first gateway/web/cgi-irc/kiwiirc.com/ip. $host] == 0} {
+		return [string range $host 35 end]
+	}
+
+	# Finds an IPv4
+	# Regexp from http://www.jamesoff.net/site/projects/eggdrop-scripts/proxycheck
+	if {[regexp {[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$} $host ip]} {
+		return $ip
+	}
+
+	return ""
+}
+
+# Extracts an IP or hostname from an IRC host
+# If the host is a cloak not parseable, returns "".
+proc extract_addr {host} {
+	if {[string first / $host] > -1} {
+		return [extract_addr_from_cloak $host]
+	}
+
+	return $host
 }
