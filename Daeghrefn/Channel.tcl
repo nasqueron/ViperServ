@@ -1,4 +1,3 @@
-# #wolfplex
 bind pubm - "#wolfplex *"	pubm:url
 bind pubm - "#fauve *"		pubm:url
 bind sign - "#wikipedia-fr *!*@*" sign:excessflood
