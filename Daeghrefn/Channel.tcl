@@ -1,7 +1,6 @@
 # #wolfplex
 bind pubm - "#wolfplex *"	pubm:url
 bind pubm - "#fauve *"		pubm:url
-bind join - "#wikipedia-fr *!*@*" join:vandalism
 bind sign - "#wikipedia-fr *!*@*" sign:excessflood
 
 #
@@ -87,27 +86,5 @@ proc sign:excessflood {nick uhost handle channel reason} {
 	if [isbotnetsuspecthost $host] {
 		newchanban $channel *!*@$host $botname [registry get protection.botnet.banreason] [registry get protection.botnet.banduration] sticky
 		sql "INSERT INTO log_flood (host, `count`) VALUES ('[sqlescape $host]', 1) ON DUPLICATE KEY UPDATE `count` = `count` + 1;"
-	}
-}
-
-#
-# Check HTTP site to detect pattern
-#
-
-# Checks on join if the user can't be identified through an HTTP check
-proc join:vandalism {nick uhost handle channel} {
-	global botname
-
-	if {[matchattr $handle fov|fov $channel]} {
-		return
-	}
-
-	set addr [extract_addr $uhost]
-	if {$addr == ""} {
-		return
-	}
-
-	if {[http_contains [registry get protection.http.pattern] http://$addr/]} {
-		newchanban $channel *!*@*$addr $botname [registry get protection.http.banreason] [registry get protection.http.banduration] sticky
 	}
 }
