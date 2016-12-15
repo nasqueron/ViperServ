@@ -9,6 +9,10 @@ bind pub  - !tweet	pub:twitter
 bind pub  - !idee	pub:idee
 bind pub  - !idees	pub:idee
 bind pub  - !idée       pub:idee
+bind pub  - !ideert	pub:ideert
+bind pub  - !idéert	pub:ideert
+bind pub  - !idee-rt	pub:ideert
+bind pub  - !idée-rt	pub:ideert
 
 #
 # SMS
@@ -250,6 +254,17 @@ proc pub:idee {nick uhost handle chan text} {
 	twitterpublish ideedarticles $nick $text
 }
 
+#!ideert
+proc pub:ideert {nick uhost handle chan text} {
+	set status ""
+	if {[twitter_try_extract_status $text status]} {
+		twitter_retweet ideedarticles $status
+		return 1
+	} {
+		return 0
+	}
+}
+
 #!identica
 proc pub:identica {nick uhost handle chan text} {
 	putquick "NOTICE $nick :!identica is currently disabled. Is identi.ca still usable since pump.io migration? If so, please request the command."
@@ -329,6 +344,33 @@ proc twitterpublish {account nick text} {
 	} {
 		putquick "NOTICE $nick :Non publié, une erreur a eu lieu."
 	}
+}
+
+# Extracts the id of the status from an URL or directly from this ID
+#
+# @param text The text containing the status ID
+# @param If successful, will be set to the id of the status to retweet
+# @return 1 if successful; otherwise, 0
+proc twitter_try_extract_status {text status} {
+	upvar 1 $status value
+
+	# Trivial case: value is already the status identifier
+	if {[isnumber $text]} {
+		set value $text
+		return 1
+	}
+
+	regexp "twitter\.com/.*/status/(\[0-9\]+)" $text matches value
+}
+
+# Retweets a status
+#
+# @param account The retweeting account username
+# @param status The id of the status to retweet
+# @return The API reply, as a dictionary
+proc twitter_retweet {account status} {
+	set url https://api.twitter.com/1.1/statuses/retweet/$status.json
+	twitter_query $url $account "" POST
 }
 
 #
