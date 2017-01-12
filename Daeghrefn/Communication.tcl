@@ -310,8 +310,15 @@ proc whois {nickname} {
 #!pub or !twit or !tweet
 #The account is channel dependant
 proc pub:twitter {nick uhost handle chan text} {
-	if {$chan == "#wikipedia-fr"} {
-		set account wikipediafr
+	set account [registry get twitter.channels.$chan.account]
+	set is_protected [registry get twitter.channels.$chan.protected]
+
+	if {$account == ""} {
+		putquick "NOTICE $nick :!pub isn't n'est pas activé sur le canal $chan / !pub isn't enabled on channel $chan"
+		return
+	}
+
+	if {$is_protected == "1"} {
 		set who [whois $nick]
 		if {$who == ""} {
 			putquick "NOTICE $nick :Pour utiliser !pub sur $chan, vous devez disposer d'un cloak projet ou unaffiliated, être connecté depuis un host sans chiffre ou encore avoir votre user@host reconnu par mes soins."
@@ -319,12 +326,8 @@ proc pub:twitter {nick uhost handle chan text} {
 		} {
 			append text " — $who"
 		}
-	} elseif {$chan == "#wolfplex"} {
-		set account wolfplex
-	} {
-		putquick "NOTICE $nick :!pub n'est pas activé sur le canal $chan"
-		return
 	}
+
 	twitterpublish $account $nick $text
 }
 
