@@ -77,6 +77,13 @@ namespace eval broker {
 	proc recover_from_broker_error {error} {
 		if {$error == "Child process signal received."} {
 			putdebug "Ignoring SIGCHLD"
+		} elseif {[string match "*server connection error 320*CONNECTION_FORCED*" $error]} {
+			# If the session doesn't allow the bot to process
+			# messages, we can ask the server to disconnect it.
+			# Log the error message, as management plugin
+			# allows to send a custom reason.
+			putdebug "$error / Trying to reconnect..."
+			connect
 		} elseif {$error == "Not connected."} {
 			connect
 		} else {
