@@ -80,12 +80,26 @@ proc sourcetry {file} {
 	return 0
 }
 
+proc should_log_tcl_command {arg} {
+	set noLogMatches {
+		"*sql*connect*"
+		"genpass *"
+	}
+	foreach noLogMatch $noLogMatches {
+		if {[string match $noLogMatch $arg]} {
+			return 0
+		}
+	}
+
+	return 1
+}
+
 #.tcl with tech.log logging
 proc dcc:tcl {handle idx arg} {
 	#Logs every .tcl commands, except sql connect
 	#You should add here any line with password.
 	catch {
-		if ![string match "*sql*connect*" $arg] {
+		if [should_log_tcl_command $arg] {
 			log tech $handle $arg
 		}
 	}

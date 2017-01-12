@@ -1,0 +1,36 @@
+package require tcltest
+namespace import ::tcltest::*
+
+###
+### Init
+###
+
+# Tested code
+source init.tcl
+source $dir/Tech.tcl
+
+###
+### Tests
+###
+
+test should_log_tcl_command_for_legit_command {} -body {
+	should_log_tcl_command "quux"
+} -result 1
+
+test should_log_tcl_command_for_empty_command {} -body {
+	should_log_tcl_command ""
+} -result 1
+
+test should_log_tcl_command_for_sql_connect {} -body {
+	should_log_tcl_command "sql connect localhost root somepassword"
+} -result 0
+
+test should_log_tcl_command_for_genpass {} -body {
+	should_log_tcl_command "genpass somepassword somedomain.tld"
+} -result 0
+
+###
+### Cleanup
+###
+
+cleanupTests
