@@ -13,6 +13,8 @@ bind pub  - !ideert	pub:ideert
 bind pub  - !idéert	pub:ideert
 bind pub  - !idee-rt	pub:ideert
 bind pub  - !idée-rt	pub:ideert
+bind pub  - !styleencyclo pub:styleencyclo
+bind pub  - !style        pub:styleencyclo
 
 #
 # SMS
@@ -248,15 +250,23 @@ proc dcc:identica {handle idx arg} {
 	
 }
 
-#!idee
+# Publishes to special accounts
 proc pub:idee {nick uhost handle chan text} {
+	twitter_pub_publish_to_account ideedarticles $nick $text
+}
+
+proc pub:styleencyclo {nick uhost handle chan text} {
+	twitter_pub_publish_to_account styleencyclo $nick $text
+}
+
+proc twitter_pub_publish_to_account {account nick text} {
 	set who [whois $nick]
 	if {$who == ""} {
 		append text " – via IRC."
 	} {
 		append text " – $who, via IRC."
 	}
-	twitterpublish ideedarticles $nick $text
+	twitterpublish $account $nick $text
 }
 
 #!ideert
