@@ -13,3 +13,8 @@ if {$dir == ""} {
 
 # Standard procedures
 source $dir/Core.tcl
+
+# Eggdrop procedures
+proc strlen {text} {
+	string length $text
+}

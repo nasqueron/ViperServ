@@ -209,6 +209,11 @@ proc dcc:twitter {handle idx arg} {
 			}
 		}
 
+		"reconfigure" {
+			twitter_update_short_url_length
+			return 1
+		}
+
 		default { putdcc $idx "Unknown Twitter command: $arg"}
 	}
 }
@@ -336,9 +341,9 @@ proc twitterpublish {account nick text} {
 		putquick "NOTICE $nick :Syntaxe : !pub <texte à publier sur identi.ca et Twitter>"
 		return
 	}
-	set len [string length $text]
+	set len [twitter_compute_len $text]
 	if {$len > 140} {
-		putquick "NOTICE $nick :140 caractères max, là il y en a $len."
+		putquick "NOTICE $nick :140 caractères max, là il y en a $len ([twitter_get_short_url_length] par lien)."
 		return
 	}
 	if [twitterpost $account $text] {
@@ -374,6 +379,36 @@ proc twitter_try_extract_status {text status} {
 proc twitter_retweet {account status} {
 	set url https://api.twitter.com/1.1/statuses/retweet/$status.json
 	twitter_query $url $account "" POST
+}
+
+# @param param The parameter to fetch in the API reply
+# return The value from configuration the JSON document, or a dict if it contains several parameters
+proc twitter_get_configuration_parameter {param} {
+	set account [registry get twitter.default_account]
+	set url https://api.twitter.com/1.1/help/configuration.json
+	set config [twitter_query $url $account]
+	dict get $config $param
+}
+
+proc twitter_update_short_url_length {} {
+	set len [twitter_get_configuration_parameter short_url_length]
+	registry set twitter.short_url_length $len
+}
+
+proc twitter_get_short_url_length {} {
+	registry get twitter.short_url_length
+}
+
+# Computes len of a tweet, taking in consideration t.co URL length
+# See https://dev.twitter.com/basics/tco
+proc twitter_compute_len {text} {
+	set short_url_length [twitter_get_short_url_length]
+
+	set len [strlen $text]
+	foreach url [geturls $text] {
+		incr len [expr $short_url_length - [strlen $url]]
+	}
+	return $len
 }
 
 #

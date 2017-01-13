@@ -1,0 +1,40 @@
+package require tcltest
+namespace import ::tcltest::*
+
+###
+### Init
+###
+
+# Tested code
+source init.tcl
+source $dir/Daeghrefn/Communication.tcl
+
+###
+### Mocks
+###
+
+# This value is normally given by a cached value in the registry
+# and updated through an API call to /help/configuration.json.
+proc twitter_get_short_url_length {} { return 23 }
+
+###
+### Tests
+###
+
+test twitter_compute_len_empty {} -body {
+	twitter_compute_len ""
+} -result 0
+
+test twitter_compute_len_regular_string {} -body {
+	twitter_compute_len "quux"
+} -result 4
+
+test twitter_compute_len_links {} -body {
+	twitter_compute_len "Je vais sur http://www.perdu.com pour y lire https://fr.wikipedia.org/w/index.php?title=Les_B%C3%A2tards_du_Nord&type=revision&diff=133589772&oldid=133589631"
+} -result 71
+
+###
+### Cleanup
+###
+
+cleanupTests
