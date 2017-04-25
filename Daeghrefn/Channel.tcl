@@ -2,6 +2,8 @@ bind pubm - "#wolfplex *"	pubm:url
 bind pubm - "#fauve *"		pubm:url
 bind sign - "#wikipedia-fr *!*@*" sign:excessflood
 
+bind dcc  o botnet dcc:botnet
+
 #
 # URL management
 #
@@ -67,8 +69,6 @@ proc isfloodquitmessage {reason} {
 }
 
 proc sign:excessflood {nick uhost handle channel reason} {
-	global botname
-
 	# We're interested by unknown users quitting with Excess Flood message.
 	if {![isfloodquitmessage $reason] || $handle != "*"} {
 		return
@@ -83,7 +83,37 @@ proc sign:excessflood {nick uhost handle channel reason} {
 	# And belong to specific ISPs
 	set host [gethost $uhost]
 	if [isbotnetsuspecthost $host] {
-		newchanban $channel *!*@$host $botname [registry get protection.botnet.banreason] [registry get protection.botnet.banduration] sticky
-		sql "INSERT INTO log_flood (host, `count`) VALUES ('[sqlescape $host]', 1) ON DUPLICATE KEY UPDATE `count` = `count` + 1;"
+		add_botnet_ban $host
 	}
+}
+
+proc dcc:botnet {handle idx arg} {
+	if {$arg == ""} {
+		putdcc $idx "Usage: .botnet <nick>"
+		return
+	}
+
+	set nick $arg
+	set uhost [getchanhost $nick]
+
+	if {$uhost == ""} {
+		putdcc $idx "User unknown: $nick"
+		return
+	}
+
+	set host [gethost $uhost]
+	if [isbotnetsuspecthost $host] {
+		add_botnet_ban $host
+		return 1
+	} {
+		putdcc $idx "Not a botnet suspect."
+		return
+	}
+}
+
+proc add_botnet_ban {host} {
+	global botname
+
+	newchanban [registry get protection.botnet.channel] *!*@$host $botname [registry get protection.botnet.banreason] [registry get protection.botnet.banduration] sticky
+	sql "INSERT INTO log_flood (host, `count`) VALUES ('[sqlescape $host]', 1) ON DUPLICATE KEY UPDATE `count` = `count` + 1;"
 }
