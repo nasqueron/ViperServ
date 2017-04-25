@@ -88,6 +88,7 @@ namespace eval notifications {
 		}
 		if {$project == "Nasqueron"} {
 			switch $group {
+				eglide { return "#eglide" }
 				tasacora { return "#tasacora" }
 				trustspace { return "#wolfplex" }
 				docker { return "#nasqueron-ops" }
