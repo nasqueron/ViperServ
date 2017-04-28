@@ -1,8 +1,9 @@
-bind pubm - "#wolfplex *"	pubm:url
-bind pubm - "#fauve *"		pubm:url
+bind pubm - * pubm:url
 bind sign - "#wikipedia-fr *!*@*" sign:excessflood
 
 bind dcc  o botnet dcc:botnet
+
+setudef flag parse-url
 
 #
 # URL management
@@ -31,6 +32,9 @@ proc url:getvideotitle {url} {
 #Currently, it prints the video title when not provided with the URL
 #TODO: checks 402/403/404/500 error codes
 proc pubm:url {nick uhost handle channel text} {
+	if {![channel get $channel parse-url]} {
+		return 0
+	}
 	foreach url [geturls $text] {
 		if [url:isvideo $url] {
 			#Prints video information on the channel
