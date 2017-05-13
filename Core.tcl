@@ -505,8 +505,8 @@ proc guidmd5 {str} {
 #
 # e.g. proc put_command_callback {fd line state} { put[lindex $state 0] [lindex $state 1] $line }
 #
-#      run_command "pwd" put_command_callback {dcc 12}
-#      run_command "pwd" put_command_callback {quick "#foo"}
+#      run_command "pwd" put_command_callback "" {dcc 12}
+#      run_command "pwd" put_command_callback "" {quick "#foo"}
 #
 #      (we provide a more generic print_command_callback procedure for this general use.)
 
@@ -543,24 +543,34 @@ proc print_command_callback {fd line state} {
     }
 }
 
+# Same to print a Python error without the traceback
+proc print_python_error_callback {fd output state} {
+    print_command_callback $fd [extractPythonError $output] $state
+}
+
 # Runs a command, opens a file descriptor to communicate with the process
 #
 # @param $cmd the command to run
 # @param $callbackProc a callback proc to handle the command output and send input
+# @param $errorCallbackProc a callback proc to handle the command error output
 # @param $state a state object to send to the callback proc
-proc run_command {cmd callbackProc state} {
+proc run_command {cmd callbackProc {errorCallbackProc ""} state} {
     set fd [open "| $cmd" r]
     fconfigure $fd -blocking false
-    fileevent $fd readable [list interactive_command_handler $fd $callbackProc $state]
+    fileevent $fd readable [list interactive_command_handler $fd $callbackProc $errorCallbackProc $state]
 }
 
 # Closes a command
 #
 # @param $fd File descriptor to the command process
-proc close_interactive_command {fd} {
+proc close_interactive_command {fd {errorCallbackProc ""} {state ""}} {
     fconfigure $fd -blocking true
     if {[catch {close $fd} err]} {
-        putdebug $err
+        if {$errorCallbackProc == ""} {
+            putdebug $err
+        } {
+            $errorCallbackProc $fd $err $state
+        }
     }
 }
 
@@ -569,16 +579,17 @@ proc close_interactive_command {fd} {
 # @param $fd File descriptor to the command process
 # @param $callbackProc a callback proc to handle the command output and send input
 # @param $state a state object to send to the callback proc
-proc interactive_command_handler {fd callbackProc {state ""}} {
+proc interactive_command_handler {fd callbackProc errorCallbackProc {state ""}} {
     set status [catch {gets $fd line} result]
     if { $status != 0 } {
         # unexpected error
-        putdebug "Unexpected error running command: "$result
-        close_interactive_command $fd
+        putdebug "Unexpected error running command: "
+        putdebug $result
+        close_interactive_command $fd $errorCallbackProc $state
     } elseif {$result >= 0} {
 	$callbackProc $fd $line $state
     } elseif {[eof $fd]} {
-        close_interactive_command $fd
+        close_interactive_command $fd $errorCallbackProc $state
     } elseif {[fblocked $f]} {
         # Read blocked, so do nothing
     }
@@ -602,6 +613,19 @@ proc get_external_script {script} {
 	global env
 	set path $env(HOME)/bin/
 	append path $script
+}
+
+# Extracts the error from Python
+proc extractPythonError {exception} {
+    # The exception is one of the line of the text (so the newline-sensitive matching)
+    # Before that, we have the full traceback we want to ignore
+    # e.g. of a line to match: pywikibot.data.api.APIError: modification-failed: Item …
+    if {[regexp -line {^([A-Za-z\.]+)\: (.*)$} $exception line type message]} {
+        return $line
+    } {
+        putdebug "Regexp doesn't match a Python error for this output in extractPythonError:"
+        putdebug $exception
+    }
 }
 
 #
