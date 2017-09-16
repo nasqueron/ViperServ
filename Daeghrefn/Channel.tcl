@@ -23,7 +23,7 @@ proc url:isvideo {url} {
 proc url:getvideotitle {url} {
 	set title ""
 	catch {
-		set title [exec -- youtube-dl -e $url]
+		set title [exec -- youtube-dl --no-warnings -e $url]
 	}
 	return $title
 }
