@@ -346,14 +346,16 @@ proc pub:twitter {nick uhost handle chan text} {
 	twitterpublish $account $nick $text
 }
 
+proc twitter_message_len {} { return 140 }
+
 proc twitterpublish {account nick text} {
 	if {$text == ""} {
 		putquick "NOTICE $nick :Syntaxe : !pub <texte à publier sur identi.ca et Twitter>"
 		return
 	}
 	set len [twitter_compute_len $text]
-	if {$len > 140} {
-		putquick "NOTICE $nick :140 caractères max, là il y en a $len ([twitter_get_short_url_length] par lien)."
+	if {$len > [twitter_message_len]} {
+		putquick "NOTICE $nick :[twitter_message_len] caractères max, là il y en a $len ([twitter_get_short_url_length] par lien)."
 		return
 	}
 	if [twitterpost $account $text] {
