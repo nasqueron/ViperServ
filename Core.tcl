@@ -180,12 +180,11 @@ proc sqlescape {data} {
 	#\ -> \\
 	#' -> \'
 	string map {"\\" "\\\\" "'" "\\'"} $data
-	
 }
 
 #Gets the first item of the first row of a sql query (scalar results)
 proc sqlscalar {sql} {
-	lindex [lindex [sql $sql] 0] 0 
+	lindex [lindex [sql $sql] 0] 0
 }
 
 #Adds specified data to specified SQL table

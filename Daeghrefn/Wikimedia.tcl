@@ -152,7 +152,7 @@ proc isAcceptableItemTitle {title} {
 			if {![regexp $re $char]} { return 0 }
 		}
 		#UTF-8 ok
-	}	
+	}
 	return 1
 }
 
@@ -221,7 +221,7 @@ namespace eval ::wikimedia {
 		if {![regexp "^\[a-z]\[A-Za-z0-9]*$" $setting]} {
 			return "Not a valid setting: $setting"
 		}
-		
+
 		if {![regexp "^\[a-z]\[a-z0-9_]*$" $project]} {
 			return "Not a valid project: $project"
 		}

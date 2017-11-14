@@ -25,4 +25,3 @@ proc setisopen {status} {
 	flush $fd
 	close $fd
 }
-

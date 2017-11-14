@@ -5,7 +5,7 @@ bind time - "30 *" ::notifications::channel_notify_periodics
 namespace eval notifications {
 	proc init {} {
 		::broker::bind [registry get broker.queue.notifications] ::notifications::on_broker_message
-		
+
 		bind * * * * ::notifications::channel_notify
 		bind "DockerHub" * * * ::notifications::docker_build_summary
 	}
@@ -58,7 +58,7 @@ namespace eval notifications {
 		foreach field "service project group rawContent type text link" {
 			lappend params [dict get $notification $field]
 		}
-		
+
 		set matchingBinds 0
 		foreach bind [binds] {
 			if {[is_matching_notification_bind $bind $notification]} {

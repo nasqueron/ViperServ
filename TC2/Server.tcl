@@ -1,25 +1,25 @@
 # ===============================================
-# =========        ====     ======   ============
-# ============  ======  ===  ===   =   ==========
-# ============  =====  ========   ===   =========
-# ============  =====  =============   ==========
-# ============  =====  ============   ===========
-# == DcK =====  =====  ===========   ============
-# ============  =====  ==========   =============
-# ============  ======  ===  ===   ==============
-# ============  =======     ===        ==========
+# =========	   ====	    ======   ============
+# ============	======	===  ===   =   ==========
+# ============	=====  ========	  ===	=========
+# ============	=====  =============   ==========
+# ============	=====  ============   ===========
+# == DcK =====	=====  ===========   ============
+# ============	=====  ==========   =============
+# ============	======	===  ===   ==============
+# ============	=======	    ===	       ==========
 # ===============================================
 # ===============================================
 # == Tau Ceti Central == Server administration ==
 # ==  This is a very dangerous product to use  ==
 # ==   Don't deploy it in stable environment   ==
-# ==    Or say goodbye to the serv security    ==
-# ==     This warning will not be repeated     ==
-# ==      All your base are belong to us!      ==
+# ==	Or say goodbye to the serv security    ==
+# ==	 This warning will not be repeated     ==
+# ==	  All your base are belong to us!      ==
 # ===============================================
 # ===============================================
 #
-#     (c) 2011 Sébastien Santoro aka Dereckson.
+#     (c) 2001 Sébastien Santoro aka Dereckson.
 #     Released under BSD license.
 
 bind bot  - tc2 bot:tc2
@@ -32,7 +32,7 @@ bind bot  - tc2 bot:tc2
 proc bot:tc2 {sourcebot command text} {
 	#Sourcebot: Nasqueron
 	#Command:   tc2
-	#Text:      requester Dereckson command phpfpm arg status
+	#Text:	    requester Dereckson command phpfpm arg status
 	set requester	[dict get $text requester]
 	set cmd		[dict get $text command]
 	set arg		[dict get $text arg]
@@ -69,9 +69,9 @@ proc tc2:username_isvalid {username} {
 proc tc2:username_exists {username} {
     #TODO: Windows and other OSes (this line has been tested under FreeBSD)
     if {[exec -- logins -oxl $username] == ""} {
-        return 0
+	return 0
     } {
-        return 1
+	return 1
     }
 }
 
@@ -130,7 +130,7 @@ proc tc2:getpermissions {keyword username} {
 	}
 }
 
-#Creates an account $username fro�m the $specified group
+#Creates an account $username from the $specified group
 proc tc2:createaccount {username group} {
 	if {$group == "web"} {
 		set key "tc2.[tc2:hostname].wwwroot"
@@ -528,7 +528,7 @@ proc tc2:command:nginx {requester arg} {
 			#.nginx server edit <domain> <+php|-php>
 			set subcommand [lindex $arg 1]
 			set domain [lindex $arg 2]
-			
+
 			if {$subcommand != "" && $domain != "" && [tc2:isdomain $domain]} {
 				set fulldomain $domain
 				foreach "subdomain domain" [tc2:cutdomain $fulldomain] {}

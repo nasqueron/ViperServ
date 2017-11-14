@@ -185,7 +185,7 @@ namespace eval ::gerrit:: {
 		# When a message is received, we sent the decoded json message
 		# to gerrit::callevent, which has the job to fire events and
 		# to call event callback procedures.
-		
+
 		global buffers
 
 		if {$text == ""} {

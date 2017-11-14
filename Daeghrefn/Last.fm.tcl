@@ -11,7 +11,7 @@ proc dcc:lastfm {handle idx arg} {
 		}
 
 		"count" {
-			
+
 		}
 
 		"top5" {
