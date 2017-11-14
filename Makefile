@@ -1,4 +1,4 @@
-TCLSH=tclsh
+TCLSH=tclsh8.6
 
 all:
 	@echo "Nothing to build."
