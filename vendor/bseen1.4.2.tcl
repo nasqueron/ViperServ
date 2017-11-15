@@ -309,7 +309,7 @@ proc bs_output {chan nick data no} {
     }
     if {[validuser $data]} {set hand $data}
     if {$hand != "*" && $hand != ""} {
-      if {[string trimleft [lindex $version 1] 0]>1030000} {set hosts [getuser $hand hosts]} {set hosts [gethosts $hand]}
+      if {[string trimleft [lindex $version 1] 0]>1030000} {set hosts [getuser $hand hosts]} {set hosts [getuser $hand HOSTS]}
       foreach addr $hosts {
         foreach item [string tolower [bs_seenmask dcc ? $addr]] {
           if {[lsearch -exact [string tolower $matches] [string tolower $item]] == -1} {set matches [concat $matches $item]}
