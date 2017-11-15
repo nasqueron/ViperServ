@@ -2,7 +2,7 @@ namespace eval broker {
 	proc init {} {
 		# Loads our librabbitmq wrapper extension
 		if {![is_package_present rabbitmq]} {
-			load ../rabbitmq.so
+			load lib/rabbitmq.so
 		}
 
 		# Connects to the broker
