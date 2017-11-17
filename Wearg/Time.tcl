@@ -1,8 +1,14 @@
+utimer 90 onload
 #bind cron - "* * * * *" cron:minute
 bind cron - "?2 * * * *" cron:often
 bind cron - "?7 * * * *" cron:often
 #bind cron - "0 * * * *" cron:hourly
 #bind cron - "0 4 * * *" cron:daily
+
+proc onload {} {
+	::broker::init
+	::notifications::init
+}
 
 #Every 5 minutes
 proc cron:often {minute hour day month weekday} {
