@@ -124,6 +124,10 @@ proc dg {dict key {throwErrorIfKeyDoesNotExist 0}} {
 # Strings
 #
 
+proc strlen {str} {
+    string length $str
+}
+
 #Completes $text by spaces or $char so the returned text length is $len
 proc completestring {text len {char " "}} {
 	set curlen [string length $text]

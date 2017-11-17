@@ -1,0 +1,26 @@
+package require tcltest
+namespace import ::tcltest::*
+
+###
+### Init
+###
+
+source init.tcl
+
+###
+### Tests
+###
+
+test strlen_regular_string {} -body {
+	strlen "quux"
+} -result 4
+
+test strlen_empty_string {} -body {
+	strlen ""
+} -result 0
+
+###
+### Cleanup
+###
+
+cleanupTests
