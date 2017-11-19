@@ -229,7 +229,7 @@ proc sqllastinsertid {} {
 # Registry
 #
 
-#Gets, sets, deletes or increments a registry value 
+#Gets, sets, deletes or increments a registry value
 proc registry {command key {value ""}} {
 	switch -- $command {
 		"add" {
@@ -237,7 +237,7 @@ proc registry {command key {value ""}} {
 		}
 
 		"get" {
-			sqlscalar "SELECT value FROM registry WHERE `data` = '$key'" 
+			sqlscalar "SELECT value FROM registry WHERE `data` = '$key'"
 		}
 
 		"set" {
@@ -373,7 +373,7 @@ proc numeric2en {n {optional 0}} {
     if {[catch {set n [expr $n]}]}  {return $n}
     if {$optional && $n==0} {return ""}
     array set dic {
-        0 zero 1 one 2 two 3 three 4 four 5 five 6 six 7 seven 
+        0 zero 1 one 2 two 3 three 4 four 5 five 6 six 7 seven
         8 eight 9 nine 10 ten 11 eleven 12 twelve
     }
     if [info exists dic($n)] {return $dic($n)}
@@ -437,7 +437,7 @@ proc url::init {} {
         variable map
         variable alphanumeric a-zA-Z0-9._~-
 
-        for {set i 0} {$i <= 256} {incr i} { 
+        for {set i 0} {$i <= 256} {incr i} {
                 set c [format %c $i]
                 if {![string match \[$alphanumeric\] $c]} {
                         set map($c) %[format %.2x $i]
@@ -483,7 +483,7 @@ proc url::decode {str} {
 # GUID
 #
 
-# Gets the MD5 of a string, and returns it following the GUID format 
+# Gets the MD5 of a string, and returns it following the GUID format
 #
 # @param $str The string to compute the hash
 # @return The MD5, formatted as a GUID
