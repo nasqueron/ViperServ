@@ -55,6 +55,44 @@ proc do {code while cond} {
 }
 
 #
+# List procs
+#
+
+# Gets the maximal value of a numeric list
+proc lmax {items} {
+	getultimatecomparedfromlist $items >
+}
+
+# Gets the minimal value of a numeric list
+proc lmin {items} {
+	getultimatecomparedfromlist $items <
+}
+
+# Gets the ultimately compared item from a list
+proc getultimatecomparedfromlist {items op} {
+	set hasValue 0
+	set max {}
+
+	foreach item $items {
+		if {![string is double $item]} {
+			continue
+		}
+
+		if {!$hasValue} {
+			set hasValue 1
+			set max $item
+			continue
+		}
+
+		if {[expr $item $op $max]} {
+			set max $item
+		}
+	}
+
+	return $max
+}
+
+#
 # Trivial procs
 #
 
@@ -70,6 +108,14 @@ proc numberSign {number} {
 	} {
 		return $number
 	}
+}
+
+# Returns the value as is if numeric, or "0" if not
+proc zeroornumber {value} {
+	if {$value == "" || ![string is double $value]} {
+		return 0
+	}
+	return $value
 }
 
 #Returns "s" if $count implies a plural
@@ -160,6 +206,17 @@ proc completestringright {text len {char " "}} {
 ## @return The zerofilled number
 proc zerofill {number digits} {
 	format "%0${digits}d" $number
+}
+
+# Maps from a list of words the length of those words
+# e.g. strlenmap "a aaa aa" will return {1 3 2}
+proc strlenmap {words} {
+	lmap key $words { string length $key }
+}
+
+# Search the max string lenghth from a list of strings
+proc strlenmax {words} {
+	zeroornumber [lmax [strlenmap $words]]
 }
 
 #

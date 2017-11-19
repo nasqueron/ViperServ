@@ -14,6 +14,8 @@ unbind dcc  n tcl		*dcc:tcl
 
   bind dcc  T tcldoc            dcc:tcldoc
 
+  bind dcc  T env       dcc:env
+
 #
 # Helpers methods
 #
@@ -192,4 +194,18 @@ for {set i 2} {$i < 11} {incr i} {
 proc dcc:tcldoc {handle idx arg} {
 	putdcc $idx [exec -- grep $arg doc/tcl-commands.doc]
 	return 1
+}
+
+#
+# UNIX environment
+#
+
+proc dcc:env {handle idx arg} {
+    global env
+    set environment [array get env]
+    set keys [dict keys $environment]
+
+    foreach "key value" $environment {
+        putdcc $idx "[format %-[strlenmax $keys]s $key] $value"
+    }
 }

@@ -19,6 +19,68 @@ test strlen_empty_string {} -body {
 	strlen ""
 } -result 0
 
+test strlenmax {} -body {
+	strlenmax "a aa alpha beta gamma delta omega"
+} -result 5
+
+test strlenmax_empty_words {} -body {
+	strlenmax [list "" "" "" ""]
+} -result 0
+
+test strlenmax_empty_list_one_empty_word {} -body {
+	strlenmax {""}
+} -result 0
+
+test strlenmax_empty_list {} -body {
+	strlenmax {}
+} -result 0
+
+test strlenmap {} -body {
+	strlenmap "a aa aaa aa a"
+} -result "1 2 3 2 1"
+
+test lmax {} -body {
+	lmax "7 10 1 20 11 4 3"
+} -result 20
+
+test lmin {} -body {
+	lmin "7 10 1 20 11 4 3"
+} -result 1
+
+test lmax_from_an_empty_list {
+	When there is no numeric value, nothing should be returned
+} -body {
+	lmax ""
+} -result ""
+
+test lmax_from_an_words_list {
+	When there is no numeric value, nothing should be returned
+} -body {
+	lmax "alpha beta gamma"
+} -result ""
+
+test lmax_from_a_mixed_list {
+	Non numeric numbers should be ignored
+} -body {
+	lmax "7 10 1 20 notanumber 11 4 3"
+} -result 20
+
+test zeroornumber_from_integer {} -body {
+	zeroornumber 4
+} -result 4
+
+test zeroornumber_from_non_numeric_string {} -body {
+	zeroornumber "alpha"
+} -result 0
+
+test zeroornumber_from_zero {} -body {
+	zeroornumber 0
+} -result 0
+
+test zeroornumber_from_empty_list {} -body {
+	zeroornumber ""
+} -result 0
+
 ###
 ### Cleanup
 ###
