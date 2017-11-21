@@ -282,6 +282,29 @@ proc sqllastinsertid {} {
 	sql "SELECT LAST_INSERT_ID()"
 }
 
+proc sqlconnect {{sqlinstance "sql"} {defaultsfile ""}} {
+	if {$defaultsfile == ""} {
+		global env
+		set defaultsfile $env(HOME)/.my.cnf
+	}
+
+	set config [readmycnf $defaultsfile]
+	$sqlinstance connect [dict get $config host] [dict get $config user] [dict get $config password]
+}
+
+proc readmycnf {defaultsfile} {
+	set config {}
+	set fd [open $defaultsfile]
+	while {[gets $fd line] != -1} {
+		set entry [split $line =]
+		if {[llength $entry] == 2} {
+			dict set config {*}$entry
+		}
+	}
+	close $fd
+	return $config
+}
+
 #
 # Registry
 #
