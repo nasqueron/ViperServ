@@ -1,13 +1,17 @@
-#utimer 90 onload
+utimer 5 onload
 bind cron - "* * * * *" cron:minute
 bind cron - "*/5 * * * *" cron:often
 bind cron - "0 * * * *" cron:hourly
 bind cron - "0 4 * * *" cron:daily
 
 proc onload {} {
+	sqlconnect sql7
+}
+
+proc launch {} {
 	#This proc, called on startup, causes the eggdrop
 	#to die on "unloadmodule server"
-	#.tcl onload manually will work
+	#.tcl launch manually will work
 
 	#Drops IRC support
 	unloadmodule irc
