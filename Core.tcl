@@ -496,7 +496,8 @@ proc xmlescape {text} {
 	#      check when to use CDATA instead &lt; &gt;
 
 	#Output
-	set text [string map {& {&amp;} ' {&apos;} {"} {&quot;}} $text]
+	set text [string map {& {&amp;} ' {&apos;} "\"" {&quot;}} $text]
+
 	if {$useCDATA} {
 		return "<!\[CDATA\[$text]]>"
 	}
