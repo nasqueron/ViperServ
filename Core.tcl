@@ -711,6 +711,59 @@ proc extractPythonError {exception} {
     }
 }
 
+###
+### Handle / nick handling
+###
+
+proc resolve_nick {nickname} {
+	set resolved [whois $nickname 0]
+
+	if {$resolved == ""} {
+		return $nickname
+	}
+
+	return $resolved
+}
+
+# Returns an identified nickname or "" if not identified
+# By default, can also return strings like "kumkum!kumkum@eglide.org"
+proc whois {nickname {useUserHost 1}} {
+	# By handle
+	set result [nick2hand $nickname]
+	if {$result != "*"} {
+		#Will return "", when nick doesn't exist to avoid further processing.
+		return $result
+	}
+
+	#Gets user@host
+	set uhost [getchanhost $nickname]
+	set host [lindex [split $uhost @] 1]
+
+	# By Cloak
+	if {[regexp / $host]} {
+		set cloak [split $host /]
+		set group [lindex $cloak 0]
+
+		if {$group != "gateway" && $group != "nat"} {
+			# @freenode/staff/ubuntu.member.niko → niko
+			# @wikipedia/pdpc.21for7.elfix → elfix
+			# @wikipedia/poulpy → poulpy
+			return [lindex [split [lindex $cloak end] .] end]
+		}
+	}
+
+	# By NickServ
+	# TODO: code with callback
+
+	# By user@host, when the host doesn't contain any digit
+	if {$useUserHost && [regexp {^[^0-9]*$} $host]} {
+		return "$nickname!$uhost"
+	}
+
+	# Can't identify
+	return ""
+}
+
 #
 # IP and host string manipulations
 #

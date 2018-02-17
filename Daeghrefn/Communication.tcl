@@ -285,43 +285,6 @@ proc pub:identica {nick uhost handle chan text} {
 	putquick "NOTICE $nick :!identica is currently disabled. Is identi.ca still usable since pump.io migration? If so, please request the command."
 }
 
-proc whois {nickname} {
-	# By handle
-	set result [nick2hand $nickname] 
-	if {$result != "*"} {
-		#Will return "", when nick doesn't exist to avoid further processing.
-		return $result
-	}
-
-	#Gets user@host
-	set uhost [getchanhost $nickname]
-	set host [lindex [split $uhost @] 1]
-
-	# By Cloak
-	if {[regexp / $host]} {
-		set cloak [split $host /]
-		set group [lindex $cloak 0]
-
-		if {$group != "gateway" && $group != "nat"} {
-			# @freenode/staff/ubuntu.member.niko → niko
-			# @wikipedia/pdpc.21for7.elfix → elfix
-			# @wikipedia/poulpy → poulpy
-			return [lindex [split [lindex $cloak end] .] end]
-		}
-	}
-
-	# By NickServ
-	# TODO: code with callback
-
-	# By user@host, when the host doesn't contain any digit
-	if {[regexp {^[^0-9]*$} $host]} {
-		return "$nickname!$uhost"
-	}
-
-	# Can't identify
-	return ""
-}
-
 #!pub or !twit or !tweet
 #The account is channel dependant
 proc pub:twitter {nick uhost handle chan text} {
