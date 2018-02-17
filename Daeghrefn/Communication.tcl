@@ -30,7 +30,7 @@ proc sendsms {from to message} {
 			set pass [registry get sms.$to.pass]
 			set xtra [registry get sms.$to.xtra]
 			if {$url == ""} {return "URL inconnue pour $to"}
-			
+
 			#Check length
 			set len [string length $from$message]
 			if {$len > 113} {
@@ -63,7 +63,7 @@ proc sendsms {from to message} {
 
 		default {
 			return "Unknown sms mode: $mode."
-		}	
+		}
 	}
 }
 
@@ -76,7 +76,7 @@ proc dcc:sms {handle idx arg} {
 	# sms.$destinataire.url		form URL
 	# sms.$destinataire.pass	e.g. rose
 	# sms.$destinataire.xtra	not needed for triskel forms, who=Darkknow needed for Wolfplex form
-	
+
 	if {$arg == "" || $arg == "config"} {
 		#Prints config
 		switch [set mode [registry get sms.$handle.mode]] {
@@ -177,7 +177,7 @@ proc dcc:twitter {handle idx arg} {
 			if {[twitter_token $account] != ""} {
 				switch [lindex $arg 2] {
 					"--force" { registry del twitter.oauth.tokens.$account }
-					"" { 
+					"" {
 						putdcc $idx "There is already a token set for this account. Please use '.twitter setup $account --force' to erase it."
 						return 0
 					}
@@ -247,7 +247,7 @@ proc twitter_query {url account {query_list {}} {method {}}} {
 
 #.identica
 proc dcc:identica {handle idx arg} {
-	
+
 }
 
 # Publishes to special accounts
@@ -390,7 +390,7 @@ proc twitter_compute_len {text} {
 # Mail
 #
 
-# .mail 
+# .mail
 proc dcc:mail {handle idx arg} {
         global mail special
         if {$arg == ""} {
@@ -408,14 +408,14 @@ proc dcc:mail {handle idx arg} {
         putdcc $idx "\002Alors, que désires tu envoyer comme mail ?\002"
         putdcc $idx "Pour envoyer l'e-mail, entre une ligne ne contenant que ceci: \002+\002"
         putdcc $idx "Pour annuler l'e-mail, entre une ligne ne contenant que ceci: \002-\002"
- 
+
         set mail($idx-subject) [truncate_first_word $arg]
         if {$mail($idx-subject) == ""} {
             putdcc $idx "\002Objet :\002"
         } else {
             putdcc $idx "\002Message :\002"
         }
- 
+
         control $idx control:mail
         dccbroadcast "Tiens, $handle est parti rédiger un mail ..."
 }
