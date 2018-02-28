@@ -1,0 +1,48 @@
+package require tcltest
+namespace import ::tcltest::*
+
+###
+### Init
+###
+
+# Tested code
+source init.tcl
+source $dir/Wearg/ServersLog.tcl
+
+###
+### Mocks
+###
+
+proc registry {command key {value ""}} {
+	if {$command == "get" && $key == "serverslog.knowncomponents"} {
+		return "Alpha Beta"
+	}
+
+	error "Unexpected registry call: $command $key $value"
+}
+
+###
+### Tests
+###
+
+test is_known_component_when_known {} -body {
+	is_known_component Alpha
+} -result 1
+
+test is_known_component_when_known_parent {} -body {
+	is_known_component Beta/Delta
+} -result 1
+
+test is_known_component_with_trailing_slash {} -body {
+	is_known_component Beta/
+} -result 0
+
+test is_known_component_when_unknown {} -body {
+	is_known_component Gamma
+} -result 0
+
+###
+### Cleanup
+###
+
+cleanupTests
