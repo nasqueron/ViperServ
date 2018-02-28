@@ -1,5 +1,6 @@
 package require http
 package require tls
+package require json::write
 
 #
 # HTTP support
@@ -93,6 +94,18 @@ proc getultimatecomparedfromlist {items op} {
 }
 
 #
+# Date and time procs
+#
+
+proc iso8601date {{clockval ""}} {
+	if {$clockval == {}} {
+		set clockval [clock seconds]
+	}
+
+	clock format $clockval -format %Y-%m-%dT%H:%M:%S%z
+}
+
+#
 # Trivial procs
 #
 
@@ -164,6 +177,12 @@ proc dg {dict key {throwErrorIfKeyDoesNotExist 0}} {
 	} elseif {$throwErrorIfKeyDoesNotExist > 0} {
 		error "Key not found: $key"
 	}
+}
+
+proc dict2json {dictToEncode} {
+    ::json::write object {*}[dict map {k v} $dictToEncode {
+        set v [::json::write string $v]
+    }]
 }
 
 #
@@ -879,4 +898,41 @@ proc extract_addr {host} {
 	}
 
 	return $host
+}
+
+###
+### Send messages
+###
+### This system allows to offer more easily dual commands available in partyline
+### and on a channel. An example implementation is in Wearg/ServersLog.tcl.
+###
+
+proc putbymode {callback message} {
+    if {[llength $callback] != 2} {
+        error "Callback must be a list of two elements: the mode and the target."
+    }
+
+    foreach "mode target" $callback {}
+    switch -- $mode {
+        "dcc" {
+            putdcc $target $message
+        }
+
+        "chan" {
+            if {[llength $target] != 2} {
+                error "Target for chan mode must be a list of two elements: the channel and the nick."
+            }
+
+            foreach "chan nick" $target {}
+            putserv "PRIVMSG $chan :$nick, $message"
+        }
+
+        default {
+			error "Unknown mode: $mode"
+		}
+    }
+}
+
+proc get_putbymode_chan_callback {chan nick}  {
+    list chan [list $chan $nick]
 }
