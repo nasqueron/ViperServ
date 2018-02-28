@@ -162,7 +162,7 @@ namespace eval notifications {
 
 		set message $text
 		if {$link != ""} {
-			append message " - $link"
+			append message " — $link"
 		}
 
 		putquick "PRIVMSG $channel :$message"
