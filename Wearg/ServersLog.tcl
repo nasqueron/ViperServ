@@ -6,7 +6,7 @@ bind dcc -   +log       dcc:log
 bind pubm -  "#* \[*\] *"        pubm:log
 
 proc pubm:log {nick uhost handle chan text} {
-    regexp "\\\[(.*)\\\] (.*)" $text match component entry
+    regexp "^\\\[(.*)\\\] (.*)" $text match component entry
 
     if {[is_known_component $component]} {
         add_to_servers_log $emitter "$network $source" $component $entry
