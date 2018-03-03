@@ -6,6 +6,10 @@ bind dcc -   +log       dcc:log
 bind pubm -  "#* \[*\] *"        pubm:log
 
 proc pubm:log {nick uhost handle chan text} {
+    if {[isbot $nick]} {
+        return 0
+    }
+
     regexp "^\\\[(.*)\\\] (.*)" $text match component entry
 
     if {[is_known_component $component]} {

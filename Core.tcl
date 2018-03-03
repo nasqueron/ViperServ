@@ -735,6 +735,11 @@ proc extractPythonError {exception} {
 ### Handle / nick handling
 ###
 
+# Determines if a nick belongs to a bot
+proc isbot {nick} {
+    matchattr [nick2hand $nick] b
+}
+
 proc resolve_nick {nickname} {
 	set resolved [whois $nickname 0]
 
