@@ -9,7 +9,8 @@ proc pubm:log {nick uhost handle chan text} {
     regexp "^\\\[(.*)\\\] (.*)" $text match component entry
 
     if {[is_known_component $component]} {
-        add_to_servers_log $emitter "$network $source" $component $entry
+        set callback [get_putbymode_chan_callback $chan $nick]
+        handle_send_to_servers_log [resolve_nick $nick] $chan $text $callback
         putcmdlog "<<$nick>> !$handle! .+log $text"
     } {
         putserv "PRIVMSG $chan :$nick, if you wish to log that, confirm with .+log $text"
