@@ -3,6 +3,7 @@ bind dcc  -  postdater   dcc:postdater
 bind dcc  -  days        dcc:days
 bind dcc  -  quux        dcc:quux
 bind dcc  -  paypal      dcc:paypal
+bind dcc  - +db          dcc:db
 
 #
 # Dates calculation
@@ -196,4 +197,210 @@ namespace eval ::paypal {
     proc net2gross {gross {rate 3.4}} {
         format %0.2f [expr $gross * (100 + $rate) / 100 + 0.35]
     }
+}
+
+#
+# Database
+#
+
+namespace eval ::datacube {
+    proc get_table {cube} {
+        set table [dg $cube datasource.db]
+        append table .
+        append table [dg $cube datasource.table]
+    }
+
+    proc insert_data_into_cube {cube} {
+        set fields [get_fields_properties $cube name]
+        set values [dict get $cube values]
+
+        if {[llength $fields] != [llength $values]} {
+            error "Datacube: count mismatch between fields and values"
+        }
+
+        sqladd [get_table $cube] $fields $values
+    }
+
+    proc is_cube_title_exists {title} {
+        set title [sqlescape $title]
+        sqlscalar "SELECT count(*) FROM db_datacubes WHERE title = '$title'"
+    }
+
+    proc get_cube {title} {
+        set cube [get_cube_properties $title]
+        dict set cube current_position -1
+    }
+
+    proc get_cube_properties {title} {
+        set title [sqlescape $title]
+        sqlscalar "SELECT properties FROM db_datacubes WHERE title = '$title'"
+    }
+
+    proc get_fields_properties {cube property} {
+        set properties {}
+        foreach field [get_fields $cube] {
+            lappend properties [dict get $field $property]
+        }
+        return $properties
+    }
+
+    proc get_fields {cube} {
+        dict get $cube fields
+    }
+
+    proc get_fields_count {cube} {
+        llength [get_fields $cube]
+    }
+
+    proc get_current_position {cube} {
+        dict get $cube current_position
+    }
+
+    proc get_current_field {cube} {
+        set current_position [get_current_position $cube]
+
+        if {$current_position >= [get_fields_count $cube]} {
+            error "Datacube: out of range position"
+        }
+
+        lindex [get_fields $cube] $current_position
+    }
+
+    proc get_current_field_info {cube info} {
+        dict get [get_current_field $cube] $info
+    }
+
+    proc is_cube_in_last_position {cube} {
+        set current_position [get_current_position $cube]
+        set fields_count [get_fields_count $cube]
+
+        if {$current_position >= $fields_count} {
+            error "Datacube: out of range position"
+        }
+
+        expr $current_position == $fields_count - 1
+    }
+
+    proc fill_buffer {cube_variable_name text} {
+        upvar 1 $cube_variable_name cube
+
+        if {[dict exists $cube buffer]} {
+            dict append cube buffer \n
+        }
+        dict append cube buffer $text
+    }
+
+    # Returns 1 if the current field is full and we can go forward
+    #         0 if the buffer has been used (multiline mode)
+    proc fill_cube_data {cube_variable_name text} {
+        upvar 1 $cube_variable_name cube
+
+        set type [get_current_field_info $cube type]
+
+        if {$type == "multiline"} {
+            fill_buffer cube $text
+        } elseif {$type == "line"} {
+            dict lappend cube values $text
+            return 1
+        } else {
+            error "Unknown type for datacube value: $type"
+        }
+
+        return 0
+    }
+
+    proc fill_cube_data_from_buffer {cube_variable_name} {
+        upvar 1 $cube_variable_name cube
+
+        dict lappend cube values [dict get $cube buffer]
+        dict unset cube buffer
+    }
+
+    # Controls database new entry process
+    # Returns 0 when we need to keep control, 1 when we're done
+    proc control_handle {idx text} {
+        global db
+
+        if {$text == "+"} {
+            fill_cube_data_from_buffer db($idx)
+            control_on_data_saved $idx
+        } elseif {$text == "-"} {
+            control_abort $idx
+            return 1
+        } else {
+            # Fill datacube
+            control_append $idx $text
+        }
+    }
+
+    proc control_on_data_saved {idx} {
+        global db
+
+        if {[is_cube_in_last_position $db($idx)]} {
+            control_save_cube $idx
+            return 1
+        }
+
+        control_forward_cube $idx
+        return 0
+    }
+
+    proc control_append {idx text} {
+        global db
+
+        set done [fill_cube_data db($idx) $text]
+        if {$done} {
+            control_on_data_saved $idx
+        } {
+            return 0
+        }
+    }
+
+    proc control_abort {idx} {
+        global db
+
+        unset db($idx)
+        putdcc $idx "Ok, le cube est laissé intact, retour sur la party line."
+    }
+
+    proc control_forward_cube {idx} {
+        global db
+
+        dict incr db($idx) current_position
+
+        putdcc $idx \002[get_current_field_info $db($idx) prompt]\002
+
+        set type [get_current_field_info $db($idx) type]
+        if {$type == "multiline"} {
+            putdcc $idx "Pour valider, entre une ligne ne contenant que ceci: \002+\002"
+        }
+    }
+
+    proc control_save_cube {idx} {
+        global db
+
+        if {[catch {
+            insert_data_into_cube $db($idx)
+        } sqlError]} {
+            putdcc $idx $sqlError
+            return 0
+        }
+
+        unset db($idx)
+        putdcc $idx "Ajouté dans le cube :-)"
+    }
+}
+
+proc dcc:db {handle idx arg} {
+    if {![datacube::is_cube_title_exists $arg]} {
+        putdcc $idx "Unknown datacube: $arg"
+        return 0
+    }
+
+    global db
+    set db($idx) [datacube::get_cube $arg]
+    datacube::control_forward_cube $idx
+    control $idx datacube::control_handle
+
+    return 1
 }
