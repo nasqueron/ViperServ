@@ -186,6 +186,17 @@ proc dcc:quux {handle idx arg} {
 # Paypal calculation
 #
 
+proc dcc:paypal {handle idx arg} {
+    set net    [::paypal::gross2net $arg]
+    set gross  [::paypal::net2gross $arg]
+    set len    [strlen $gross]
+
+    if {[isnumber $arg]} {
+        putdcc $idx "Net:   [format %${len}s $net]"
+        putdcc $idx "Gross: [format %${len}s $gross]"
+    }
+}
+
 namespace eval ::paypal {
     # -rate% - 0.35 €
     # Default rate: 3.4% for EU
