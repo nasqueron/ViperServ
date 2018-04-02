@@ -155,6 +155,14 @@ namespace eval notifications {
 			return
 		}
 
+		# T1253 - Some events produce "null text"
+		if {$text == "null"} {
+			set routingKey "$project.$group.$service.$type"
+			putdebug "Message 'null' received for $routingKey notification:"
+			putdebug $rawContent
+			return
+		}
+
 		set channel [get_notification_channel $project $group]
 		if {$channel == ""} {
 			return
