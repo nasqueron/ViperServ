@@ -12,6 +12,10 @@ proc pubm:log {nick uhost handle chan text} {
 
     regexp "^\\\[(.*)\\\] (.*)" $text match component entry
 
+    if {![could_be_a_component $component]} {
+        return 0
+    }
+
     if {[is_known_component $component]} {
         set callback [get_putbymode_chan_callback $chan $nick]
         handle_send_to_servers_log [resolve_nick $nick] $chan $text $callback
@@ -43,6 +47,27 @@ proc is_known_component {candidate} {
     }
 
     return 0
+}
+
+proc could_be_a_component {candidate} {
+    set firstCharacter [string index $candidate 0]
+
+    # Dates and numeric sequences are ignored
+    if {[string is digit $firstCharacter]} {
+        return 0
+    }
+
+    if {$firstCharacter == " "} {
+        return 0
+    }
+
+    foreach component [registry get serverslog.knownnotcomponents] {
+        if {$candidate == $component} {
+            return 0
+        }
+    }
+
+    return 1
 }
 
 proc handle_send_to_servers_log {emitter source arg callback} {

@@ -18,6 +18,10 @@ proc registry {command key {value ""}} {
 		return "Alpha Beta"
 	}
 
+	if {$command == "get" && $key == "serverslog.knownnotcomponents"} {
+		return "{GSoC Mentors}"
+	}
+
 	error "Unexpected registry call: $command $key $value"
 }
 
@@ -39,6 +43,26 @@ test is_known_component_with_trailing_slash {} -body {
 
 test is_known_component_when_unknown {} -body {
 	is_known_component Gamma
+} -result 0
+
+test could_be_a_component_with_date {} -body {
+	could_be_a_component "15-Apr-2018 21:37:42 UTC"
+} -result 0
+
+test could_be_a_component_with_time {} -body {
+	could_be_a_component "1905495.738522"
+} -result 0
+
+test could_be_a_component_with_time_in_log {} -body {
+	could_be_a_component " 0.528573"
+} -result 0
+
+test could_be_a_component_with_server_name {} -body {
+	could_be_a_component "Ysul"
+} -result 1
+
+test could_be_a_component_with_mailing_list_prefix {} -body {
+	could_be_a_component "GSoC Mentors"
 } -result 0
 
 ###
