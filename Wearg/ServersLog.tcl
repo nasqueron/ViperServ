@@ -88,7 +88,7 @@ proc add_to_servers_log {emitter source component entry} {
         date [iso8601date]
         emitter $emitter
         source {$source}
-        component $component
+        component {$component}
         entry {$entry}
     "]
 
