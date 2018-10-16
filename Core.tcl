@@ -46,6 +46,10 @@ proc is_package_present {package} {
 	expr ![catch {package present $package}]
 }
 
+proc has_no_args {args} {
+	expr {$args == "" || $args == "{}" || $args == "{{}}"}
+}
+
 #
 # Loop constructs
 #
