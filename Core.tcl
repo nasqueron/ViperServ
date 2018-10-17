@@ -11,24 +11,24 @@ package require json::write
 
 # Determines if a specified page's source code contains the specified string
 proc http_contains {pattern url} {
-	try {
-		set fd [::http::geturl $url -timeout 600]
-	} on error {result} {
-		return 0
-	}
+    try {
+        set fd [::http::geturl $url -timeout 600]
+    } on error {result} {
+        return 0
+    }
 
-	if {[::http::status $fd] != "ok"} {
-		set result 0
-	} elseif {[::http::ncode $fd] != 200} {
-		set result 0
-	} elseif {[string first $pattern [::http::data $fd]] > -1} {
-		set result 1
-	} {
-		set result 0
-	}
+    if {[::http::status $fd] != "ok"} {
+        set result 0
+    } elseif {[::http::ncode $fd] != 200} {
+        set result 0
+    } elseif {[string first $pattern [::http::data $fd]] > -1} {
+        set result 1
+    } {
+        set result 0
+    }
 
-	::http::cleanup $fd
-	return $result
+    ::http::cleanup $fd
+    return $result
 }
 
 
@@ -38,16 +38,16 @@ proc http_contains {pattern url} {
 
 #Determines if $proc exists
 proc proc_exists {proc} {
-	expr {[info procs $proc] == $proc}
+    expr {[info procs $proc] == $proc}
 }
 
 
 proc is_package_present {package} {
-	expr ![catch {package present $package}]
+    expr ![catch {package present $package}]
 }
 
 proc has_no_args {args} {
-	expr {$args == "" || $args == "{}" || $args == "{{}}"}
+    expr {$args == "" || $args == "{}" || $args == "{{}}"}
 }
 
 #
@@ -65,36 +65,36 @@ proc do {code while cond} {
 
 # Gets the maximal value of a numeric list
 proc lmax {items} {
-	getultimatecomparedfromlist $items >
+    getultimatecomparedfromlist $items >
 }
 
 # Gets the minimal value of a numeric list
 proc lmin {items} {
-	getultimatecomparedfromlist $items <
+    getultimatecomparedfromlist $items <
 }
 
 # Gets the ultimately compared item from a list
 proc getultimatecomparedfromlist {items op} {
-	set hasValue 0
-	set max {}
+    set hasValue 0
+    set max {}
 
-	foreach item $items {
-		if {![string is double $item]} {
-			continue
-		}
+    foreach item $items {
+        if {![string is double $item]} {
+            continue
+        }
 
-		if {!$hasValue} {
-			set hasValue 1
-			set max $item
-			continue
-		}
+        if {!$hasValue} {
+            set hasValue 1
+            set max $item
+            continue
+        }
 
-		if {[expr $item $op $max]} {
-			set max $item
-		}
-	}
+        if {[expr $item $op $max]} {
+            set max $item
+        }
+    }
 
-	return $max
+    return $max
 }
 
 #
@@ -102,11 +102,11 @@ proc getultimatecomparedfromlist {items op} {
 #
 
 proc iso8601date {{clockval ""}} {
-	if {$clockval == {}} {
-		set clockval [clock seconds]
-	}
+    if {$clockval == {}} {
+        set clockval [clock seconds]
+    }
 
-	clock format $clockval -format %Y-%m-%dT%H:%M:%S%z
+    clock format $clockval -format %Y-%m-%dT%H:%M:%S%z
 }
 
 #
@@ -120,26 +120,26 @@ proc isnumber {v} {
 
 # Returns +-<number>
 proc numberSign {number} {
-	if {$number > 0} {
-		return "+$number"
-	} {
-		return $number
-	}
+    if {$number > 0} {
+        return "+$number"
+    } {
+        return $number
+    }
 }
 
 # Returns the value as is if numeric, or "0" if not
 proc zeroornumber {value} {
-	if {$value == "" || ![string is double $value]} {
-		return 0
-	}
-	return $value
+    if {$value == "" || ![string is double $value]} {
+        return 0
+    }
+    return $value
 }
 
 #Returns "s" if $count implies a plural
 #TODO: keep this method for French (ie NOT adjusting values for English)
 #      and grab the plural proc from wiki.tcl.tk for English.
 proc s {count} {
-	if {$count >= 2 || $count <= -2} {return "s"}
+    if {$count >= 2 || $count <= -2} {return "s"}
 }
 
 proc isnotasciiutf8char {char} {
@@ -170,17 +170,17 @@ proc isutf8char {char} {
 # @param $throwErrorIfKeyDoesNotExist when the key doesn't exist: if true, throws an error; otherwise, returns an empty string
 # @return the dictionary value at the specified key, or an empty string if the key doesn't exist
 proc dg {dict key {throwErrorIfKeyDoesNotExist 0}} {
-	set keys [split $key .]
-	if {[llength $keys] > 1} {
-		# Recursive call
-		# dg $dict a.b = dict get [dict get $dict a] b
-		dg [dg $dict [lindex $keys 0] $throwErrorIfKeyDoesNotExist] [join [lrange $keys 1 end] .] $throwErrorIfKeyDoesNotExist
-	} elseif {([llength $dict] % 2 == 0) && [dict exists $dict $key]} {
-		# This is a dict and we have a key
-		dict get $dict $key
-	} elseif {$throwErrorIfKeyDoesNotExist > 0} {
-		error "Key not found: $key"
-	}
+    set keys [split $key .]
+    if {[llength $keys] > 1} {
+        # Recursive call
+        # dg $dict a.b = dict get [dict get $dict a] b
+        dg [dg $dict [lindex $keys 0] $throwErrorIfKeyDoesNotExist] [join [lrange $keys 1 end] .] $throwErrorIfKeyDoesNotExist
+    } elseif {([llength $dict] % 2 == 0) && [dict exists $dict $key]} {
+        # This is a dict and we have a key
+        dict get $dict $key
+    } elseif {$throwErrorIfKeyDoesNotExist > 0} {
+        error "Key not found: $key"
+    }
 }
 
 proc dict2json {dictToEncode} {
@@ -199,27 +199,27 @@ proc strlen {str} {
 
 #Completes $text by spaces or $char so the returned text length is $len
 proc completestring {text len {char " "}} {
-	set curlen [string length $text]
-	if {$curlen >= $len} {
-		return $text
-	}
-	if {[string length $char] < 2} {
-		append text [string repeat $char [expr $len - $curlen]]
-	} {
-		while {[string length $text] < $len} {
-			append text $char
-		}
-		string range $text 0 $len+1
-	}
+    set curlen [string length $text]
+    if {$curlen >= $len} {
+        return $text
+    }
+    if {[string length $char] < 2} {
+        append text [string repeat $char [expr $len - $curlen]]
+    } {
+        while {[string length $text] < $len} {
+            append text $char
+        }
+        string range $text 0 $len+1
+    }
 }
 
 proc completestringright {text len {char " "}} {
-	set curlen [string length $text]
-	if {$curlen >= $len} {
-		return $text
-	}
-	set completedtext [string range [completestring $text $len $char] $curlen end]
-	append completedtext $text
+    set curlen [string length $text]
+    if {$curlen >= $len} {
+        return $text
+    }
+    set completedtext [string range [completestring $text $len $char] $curlen end]
+    append completedtext $text
 }
 
 ## Prepends 0s to a number
@@ -228,18 +228,18 @@ proc completestringright {text len {char " "}} {
 ## @param $digits The number length
 ## @return The zerofilled number
 proc zerofill {number digits} {
-	format "%0${digits}d" $number
+    format "%0${digits}d" $number
 }
 
 # Maps from a list of words the length of those words
 # e.g. strlenmap "a aaa aa" will return {1 3 2}
 proc strlenmap {words} {
-	lmap key $words { string length $key }
+    lmap key $words { string length $key }
 }
 
 # Search the max string lenghth from a list of strings
 proc strlenmax {words} {
-	zeroornumber [lmax [strlenmap $words]]
+    zeroornumber [lmax [strlenmap $words]]
 }
 
 #
@@ -248,84 +248,84 @@ proc strlenmax {words} {
 
 #Reconnects to the sql & sql2 server
 proc sqlrehash {} {
-	global sql
-	catch {
-		sql  disconnect
-		sql2 disconnect
-	}
-	sql  connect  $sql(host) $sql(user) $sql(pass)
-	sql2 connect  $sql(host) $sql(user) $sql(pass)
-	sql  selectdb $sql(database)
-	sql2 selectdb $sql(database)
+    global sql
+    catch {
+        sql  disconnect
+        sql2 disconnect
+    }
+    sql  connect  $sql(host) $sql(user) $sql(pass)
+    sql2 connect  $sql(host) $sql(user) $sql(pass)
+    sql  selectdb $sql(database)
+    sql2 selectdb $sql(database)
 }
 
 #Escape a string to use as sql query parameter
 proc sqlescape {data} {
-	#\ -> \\
-	#' -> \'
-	string map {"\\" "\\\\" "'" "\\'"} $data
+    #\ -> \\
+    #' -> \'
+    string map {"\\" "\\\\" "'" "\\'"} $data
 }
 
 #Gets the first item of the first row of a sql query (scalar results)
 proc sqlscalar {sql} {
-	lindex [lindex [sql $sql] 0] 0
+    lindex [lindex [sql $sql] 0] 0
 }
 
 #Adds specified data to specified SQL table
 proc sqladd {table {data1 ""} {data2 ""}} {
-	if {$data1 == ""} {
-		set fields ""
-		#Prints field to fill
-		foreach row [sql "SHOW COLUMNS FROM $table"] {
-			lappend fields [lindex $row 0]
-		}
-		return $fields
-	}
+    if {$data1 == ""} {
+        set fields ""
+        #Prints field to fill
+        foreach row [sql "SHOW COLUMNS FROM $table"] {
+            lappend fields [lindex $row 0]
+        }
+        return $fields
+    }
 
-	if {$data2 == ""} {
-		set sql "INSERT INTO $table VALUES ("
-		set data $data1
-	} {
-		set sql "INSERT INTO $table (`[join $data1 "`, `"]`) VALUES ("
-		set data $data2
-	}
-	set first 1
-	foreach value $data {
-		if {$first == 1} {set first 0} {append sql ", "}
-		append sql "'[sqlescape $value]'"
-	}
-	append sql ")"
-	sql $sql
+    if {$data2 == ""} {
+        set sql "INSERT INTO $table VALUES ("
+        set data $data1
+    } {
+        set sql "INSERT INTO $table (`[join $data1 "`, `"]`) VALUES ("
+        set data $data2
+    }
+    set first 1
+    foreach value $data {
+        if {$first == 1} {set first 0} {append sql ", "}
+        append sql "'[sqlescape $value]'"
+    }
+    append sql ")"
+    sql $sql
 }
 
 # Gets the value of the AUTOINCREMENT column for the last INSERT
 #
 # @return the last value of the primary key
 proc sqllastinsertid {} {
-	sql "SELECT LAST_INSERT_ID()"
+    sql "SELECT LAST_INSERT_ID()"
 }
 
 proc sqlconnect {{sqlinstance "sql"} {defaultsfile ""}} {
-	if {$defaultsfile == ""} {
-		global env
-		set defaultsfile $env(HOME)/.my.cnf
-	}
+    if {$defaultsfile == ""} {
+        global env
+        set defaultsfile $env(HOME)/.my.cnf
+    }
 
-	set config [readmycnf $defaultsfile]
-	$sqlinstance connect [dict get $config host] [dict get $config user] [dict get $config password]
+    set config [readmycnf $defaultsfile]
+    $sqlinstance connect [dict get $config host] [dict get $config user] [dict get $config password]
 }
 
 proc readmycnf {defaultsfile} {
-	set config {}
-	set fd [open $defaultsfile]
-	while {[gets $fd line] != -1} {
-		set entry [split $line =]
-		if {[llength $entry] == 2} {
-			dict set config {*}$entry
-		}
-	}
-	close $fd
-	return $config
+    set config {}
+    set fd [open $defaultsfile]
+    while {[gets $fd line] != -1} {
+        set entry [split $line =]
+        if {[llength $entry] == 2} {
+            dict set config {*}$entry
+        }
+    }
+    close $fd
+    return $config
 }
 
 #
@@ -334,48 +334,48 @@ proc readmycnf {defaultsfile} {
 
 #Gets, sets, deletes or increments a registry value
 proc registry {command key {value ""}} {
-	switch -- $command {
-		"add" {
-			sqladd registry "data value" [list $key $value]
-		}
+    switch -- $command {
+        "add" {
+            sqladd registry "data value" [list $key $value]
+        }
 
-		"get" {
-			sqlscalar "SELECT value FROM registry WHERE `data` = '$key'"
-		}
+        "get" {
+            sqlscalar "SELECT value FROM registry WHERE `data` = '$key'"
+        }
 
-		"set" {
-			sqlreplace registry "data value" [list $key $value]
-		}
+        "set" {
+            sqlreplace registry "data value" [list $key $value]
+        }
 
-		"del" {
-			registry delete $key $value
-		}
+        "del" {
+            registry delete $key $value
+        }
 
-		"delete" {
-			sql "DELETE FROM registry WHERE `data` = '$key'"
-		}
+        "delete" {
+            sql "DELETE FROM registry WHERE `data` = '$key'"
+        }
 
-		"incr" {
-			if {$value == ""} {
-				set term 1
-			} elseif {[string is integer $value]} {
-				set term $value
-			} {
-				error "The increment term must be an integer."
-			}
+        "incr" {
+            if {$value == ""} {
+                set term 1
+            } elseif {[string is integer $value]} {
+                set term $value
+            } {
+                error "The increment term must be an integer."
+            }
 
-			set current [registry get $key]
-			if {$current == ""} {
-				registry set $key $term
-			} {
-				registry set $key [incr current $term]
-			}
-		}
+            set current [registry get $key]
+            if {$current == ""} {
+                registry set $key $term
+            } {
+                registry set $key [incr current $term]
+            }
+        }
 
-		default {
-			error "unknown subcommand: must be add, get, set, incr or delete"
-		}
-	}
+        default {
+            error "unknown subcommand: must be add, get, set, incr or delete"
+        }
+    }
 }
 
 #
@@ -386,18 +386,18 @@ proc registry {command key {value ""}} {
 #
 #
 proc getuserid {who} {
-	if {$who == ""} {
-		return
-	} elseif {![isnumber $who]} {
-		#username -> user_id
-		sql "SELECT user_id FROM users WHERE username = '[sqlescape $who]'"
-	} elseif {$who < 1000} {
-		#idx -> user_id
-		getuserid [idx2hand $who]
-	} else {
-		#user_id -> user_id (or "" if not existing)
-		sql "SELECT user_id FROM users WHERE user_id = $who"
-	}
+    if {$who == ""} {
+        return
+    } elseif {![isnumber $who]} {
+        #username -> user_id
+        sql "SELECT user_id FROM users WHERE username = '[sqlescape $who]'"
+    } elseif {$who < 1000} {
+        #idx -> user_id
+        getuserid [idx2hand $who]
+    } else {
+        #user_id -> user_id (or "" if not existing)
+        sql "SELECT user_id FROM users WHERE user_id = $who"
+    }
 }
 
 # Gets user info
@@ -405,7 +405,7 @@ proc getuserid {who} {
 # @param who The user
 # @param what The information to get
 proc getuserinfo {who what} {
-	sqlscalar "SELECT $what FROM users WHERE user_id = [getuserid $who]"
+    sqlscalar "SELECT $what FROM users WHERE user_id = [getuserid $who]"
 }
 
 #
@@ -413,62 +413,62 @@ proc getuserinfo {who what} {
 #
 
 proc geturls {text} {
-	#Finds the first url position
-	set pos -1
-	foreach needle "http:// https:// www. youtu.be" {
-		set pos1 [string first $needle $text]
-		if {$pos1 != -1 && ($pos == -1 || $pos1 < $pos)} {
-			set pos $pos1
-		}
-	}
+    #Finds the first url position
+    set pos -1
+    foreach needle "http:// https:// www. youtu.be" {
+        set pos1 [string first $needle $text]
+        if {$pos1 != -1 && ($pos == -1 || $pos1 < $pos)} {
+            set pos $pos1
+        }
+    }
 
-	#No URL found
-	if {$pos == -1} {return}
+    #No URL found
+    if {$pos == -1} {return}
 
-	#URL found
-	set pos2 [string first " " $text $pos]
-	if {$pos2 == -1} {
-		#Last URL to be found
-		string range $text $pos end
-	} {
-		#Recursive call to get other URLs
-		concat [string range $text $pos $pos2-1] [geturls [string range $text $pos2+1 end]]
-	}
+    #URL found
+    set pos2 [string first " " $text $pos]
+    if {$pos2 == -1} {
+        #Last URL to be found
+        string range $text $pos end
+    } {
+        #Recursive call to get other URLs
+        concat [string range $text $pos $pos2-1] [geturls [string range $text $pos2+1 end]]
+    }
 }
 
 #Reads specified URL and returns content
 proc geturltext {url {trim 1}} {
-	set fd [http::geturl $url]
-	set text [http::data $fd]
-	http::cleanup $fd
-	if $trim {
-		string trim $text
-	} {
-		return $text
-	}
+    set fd [http::geturl $url]
+    set text [http::data $fd]
+    http::cleanup $fd
+    if $trim {
+        string trim $text
+    } {
+        return $text
+    }
 }
 
 proc numeric2ordinal {n} {
-	switch $n {
-		 1 { return first }
-		 2 { return second }
-		 3 { return third }
-		 5 { return fifth }
-		 8 { return eight }
-		 9 { return ninth }
-		#todo: ve -> f / y -> ie
-		12 { return twelfth }
-		default {
-			set ordinal "[numeric2en $n]th"
-			set m [expr $n % 10]
-			if {$m == 0} {
-				return [string map "yth ieth" $ordinal]
-			}
-			if {$n < 20} { return $ordinal }
-			if {$n > 100} { return "${n}th" }
-			return "[numeric2en [expr $n - $m]]-[numeric2ordinal $m]"
-		}
-	}
+    switch $n {
+         1 { return first }
+         2 { return second }
+         3 { return third }
+         5 { return fifth }
+         8 { return eight }
+         9 { return ninth }
+        #todo: ve -> f / y -> ie
+        12 { return twelfth }
+        default {
+            set ordinal "[numeric2en $n]th"
+            set m [expr $n % 10]
+            if {$m == 0} {
+                return [string map "yth ieth" $ordinal]
+            }
+            if {$n < 20} { return $ordinal }
+            if {$n > 100} { return "${n}th" }
+            return "[numeric2en [expr $n - $m]]-[numeric2ordinal $m]"
+        }
+    }
 }
 
 proc numeric2en {n {optional 0}} {
@@ -510,21 +510,21 @@ proc truncate_first_word {string} {
 }
 
 proc xmlescape {text} {
-	#Determines if we should use <![CDATA[]]>
-	set useCDATA 0
-	if {[string first < $text] > -1 || [string first > $text] > -1} {
-		set useCDATA 1
-	}
-	#TODO: check if there is no other case for CDATA
-	#      check when to use CDATA instead &lt; &gt;
+    #Determines if we should use <![CDATA[]]>
+    set useCDATA 0
+    if {[string first < $text] > -1 || [string first > $text] > -1} {
+        set useCDATA 1
+    }
+    #TODO: check if there is no other case for CDATA
+    #      check when to use CDATA instead &lt; &gt;
 
-	#Output
-	set text [string map {& {&amp;} ' {&apos;} "\"" {&quot;}} $text]
+    #Output
+    set text [string map {& {&amp;} ' {&apos;} "\"" {&quot;}} $text]
 
-	if {$useCDATA} {
-		return "<!\[CDATA\[$text]]>"
-	}
-	return $text
+    if {$useCDATA} {
+        return "<!\[CDATA\[$text]]>"
+    }
+    return $text
 }
 
 #
@@ -592,15 +592,15 @@ proc url::decode {str} {
 # @param $str The string to compute the hash
 # @return The MD5, formatted as a GUID
 proc guidmd5 {str} {
-	set md5 [md5 $str]
-	set output ""
-	for {set i 0} {$i < 32} {incr i} {
-		if {$i == 8 || $i == 12 || $i == 16 || $i == 20} {
-			append output "-"
-		}
-		append output [string index $md5 $i]
-	}
-	return $output
+    set md5 [md5 $str]
+    set output ""
+    for {set i 0} {$i < 32} {incr i} {
+        if {$i == 8 || $i == 12 || $i == 16 || $i == 20} {
+            append output "-"
+        }
+        append output [string index $md5 $i]
+    }
+    return $output
 }
 
 #
@@ -694,7 +694,7 @@ proc interactive_command_handler {fd callbackProc errorCallbackProc {state ""}} 
         putdebug $result
         close_interactive_command $fd $errorCallbackProc $state
     } elseif {$result >= 0} {
-	$callbackProc $fd $line $state
+    $callbackProc $fd $line $state
     } elseif {[eof $fd]} {
         close_interactive_command $fd $errorCallbackProc $state
     } elseif {[fblocked $f]} {
@@ -717,9 +717,9 @@ proc posix_escape {name} {
 
 # Returns absolute path to external script
 proc get_external_script {script} {
-	global env
-	set path $env(HOME)/bin/
-	append path $script
+    global env
+    set path $env(HOME)/bin/
+    append path $script
 }
 
 # Extracts the error from Python
@@ -745,52 +745,52 @@ proc isbot {nick} {
 }
 
 proc resolve_nick {nickname} {
-	set resolved [whois $nickname 0]
+    set resolved [whois $nickname 0]
 
-	if {$resolved == ""} {
-		return $nickname
-	}
+    if {$resolved == ""} {
+        return $nickname
+    }
 
-	return $resolved
+    return $resolved
 }
 
 # Returns an identified nickname or "" if not identified
 # By default, can also return strings like "kumkum!kumkum@eglide.org"
 proc whois {nickname {useUserHost 1}} {
-	# By handle
-	set result [nick2hand $nickname]
-	if {$result != "*"} {
-		#Will return "", when nick doesn't exist to avoid further processing.
-		return $result
-	}
+    # By handle
+    set result [nick2hand $nickname]
+    if {$result != "*"} {
+        #Will return "", when nick doesn't exist to avoid further processing.
+        return $result
+    }
 
-	#Gets user@host
-	set uhost [getchanhost $nickname]
-	set host [lindex [split $uhost @] 1]
+    #Gets user@host
+    set uhost [getchanhost $nickname]
+    set host [lindex [split $uhost @] 1]
 
-	# By Cloak
-	if {[regexp / $host]} {
-		set cloak [split $host /]
-		set group [lindex $cloak 0]
+    # By Cloak
+    if {[regexp / $host]} {
+        set cloak [split $host /]
+        set group [lindex $cloak 0]
 
-		if {$group != "gateway" && $group != "nat"} {
-			# @freenode/staff/ubuntu.member.niko → niko
-			# @wikipedia/pdpc.21for7.elfix → elfix
-			# @wikipedia/poulpy → poulpy
-			return [lindex [split [lindex $cloak end] .] end]
-		}
-	}
+        if {$group != "gateway" && $group != "nat"} {
+            # @freenode/staff/ubuntu.member.niko → niko
+            # @wikipedia/pdpc.21for7.elfix → elfix
+            # @wikipedia/poulpy → poulpy
+            return [lindex [split [lindex $cloak end] .] end]
+        }
+    }
 
-	# By NickServ
-	# TODO: code with callback
+    # By NickServ
+    # TODO: code with callback
 
-	# By user@host, when the host doesn't contain any digit
-	if {$useUserHost && [regexp {^[^0-9]*$} $host]} {
-		return "$nickname!$uhost"
-	}
+    # By user@host, when the host doesn't contain any digit
+    if {$useUserHost && [regexp {^[^0-9]*$} $host]} {
+        return "$nickname!$uhost"
+    }
 
-	# Can't identify
-	return ""
+    # Can't identify
+    return ""
 }
 
 #
@@ -799,84 +799,84 @@ proc whois {nickname {useUserHost 1}} {
 
 # Gets the host part of a [nick!]user@host string
 proc gethost {uhost} {
-	set pos [string first @ $uhost]
-	if {$pos == -1} {
-		return ""
-	}
-	string range $uhost [expr $pos + 1] end
+    set pos [string first @ $uhost]
+    if {$pos == -1} {
+        return ""
+    }
+    string range $uhost [expr $pos + 1] end
 }
 
 # Determines if the specified string is a valid IPv4 address
 proc isipv4 {string} {
-	# http://wiki.tcl.tk/989 - Michael A. Cleverly
-	set octet {(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])}
-	regexp -- "^[join [list $octet $octet $octet $octet] {\.}]\$" $string
+    # http://wiki.tcl.tk/989 - Michael A. Cleverly
+    set octet {(?:\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])}
+    regexp -- "^[join [list $octet $octet $octet $octet] {\.}]\$" $string
 
 }
 
 # Determines if the specified string is a valid IPv6 address
 proc isipv6 {string} {
-	#
-	# NOTE: 2001:0db8:0000:0000:0000:0000:1428:57ab
-	#				2001:0db8:0000:0000:0000::1428:57ab
-	#				2001:0db8:0:0:0:0:1428:57ab
-	#				2001:0db8:0:0::1428:57ab
-	#				2001:0db8::1428:57ab
-	#				2001:db8::1428:57ab
-	#				2001:0db8:0000:0000:0000:0000:<IPv4>
-	#				::1
-	#				::
-	#
-	if {$string eq "::"} then {
-		return true
-	}
+    #
+    # NOTE: 2001:0db8:0000:0000:0000:0000:1428:57ab
+    #       2001:0db8:0000:0000:0000::1428:57ab
+    #       2001:0db8:0:0:0:0:1428:57ab
+    #       2001:0db8:0:0::1428:57ab
+    #       2001:0db8::1428:57ab
+    #       2001:db8::1428:57ab
+    #       2001:0db8:0000:0000:0000:0000:<IPv4>
+    #       ::1
+    #       ::
+    #
+    if {$string eq "::"} then {
+        return true
+    }
 
-	if {[string range $string 0 1] == "::"} then {
-		set string [string range $string 1 end]
-	}
+    if {[string range $string 0 1] == "::"} then {
+        set string [string range $string 1 end]
+    }
 
-	if {[string range $string end-1 end] == "::"} then {
-		set string [string range $string 0 end-1]
-	}
+    if {[string range $string end-1 end] == "::"} then {
+        set string [string range $string 0 end-1]
+    }
 
-	set octets [split $string :]
-	set llength [llength $octets]
+    set octets [split $string :]
+    set llength [llength $octets]
 
-	if {$llength > 0 && $llength <= 8} then {
-		set last [expr {$llength - 1}]
+    if {$llength > 0 && $llength <= 8} then {
+        set last [expr {$llength - 1}]
 
-		for {set index 0} {$index < $llength} {incr index} {
-			set octet [lindex $octets $index]
-			set length [string length $octet]
+        for {set index 0} {$index < $llength} {incr index} {
+            set octet [lindex $octets $index]
+            set length [string length $octet]
 
-			if {$length == 0} then {
-				if {![info exists null]} then {
-					set null $index; continue
-				} else {
-					return false
-				}
-			}
+            if {$length == 0} then {
+                if {![info exists null]} then {
+                    set null $index; continue
+                } else {
+                    return false
+                }
+            }
 
-			if {$length <= 4 && [string is xdigit -strict $octet]} then {
-				continue
-			}
+            if {$length <= 4 && [string is xdigit -strict $octet]} then {
+                continue
+            }
 
-			if {$llength <= 7 && $index == $last && [isipv4 $octet]} then {
-				continue
-			}
+            if {$llength <= 7 && $index == $last && [isipv4 $octet]} then {
+                continue
+            }
 
-			return false
-		}
+            return false
+        }
 
-		return true
-	}
+        return true
+    }
 
-	return false
+    return false
 }
 
 # Determines if the specified string is a valid IP address
 proc isip {string} {
-	expr [isipv4 $string] || [isipv6 $string]
+    expr [isipv4 $string] || [isipv6 $string]
 }
 
 ###
@@ -886,27 +886,27 @@ proc isip {string} {
 # Extracts an IP address from a Freenode cloak
 # Freenode tends to add IPs as suffix for gateway cloaks.
 proc extract_addr_from_cloak {host} {
-	if {[string first gateway/web/cgi-irc/kiwiirc.com/ip. $host] == 0} {
-		return [string range $host 35 end]
-	}
+    if {[string first gateway/web/cgi-irc/kiwiirc.com/ip. $host] == 0} {
+        return [string range $host 35 end]
+    }
 
-	# Finds an IPv4
-	# Regexp from http://www.jamesoff.net/site/projects/eggdrop-scripts/proxycheck
-	if {[regexp {[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$} $host ip]} {
-		return $ip
-	}
+    # Finds an IPv4
+    # Regexp from http://www.jamesoff.net/site/projects/eggdrop-scripts/proxycheck
+    if {[regexp {[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$} $host ip]} {
+        return $ip
+    }
 
-	return ""
+    return ""
 }
 
 # Extracts an IP or hostname from an IRC host
 # If the host is a cloak not parseable, returns "".
 proc extract_addr {host} {
-	if {[string first / $host] > -1} {
-		return [extract_addr_from_cloak $host]
-	}
+    if {[string first / $host] > -1} {
+        return [extract_addr_from_cloak $host]
+    }
 
-	return $host
+    return $host
 }
 
 ###
@@ -937,8 +937,8 @@ proc putbymode {callback message} {
         }
 
         default {
-			error "Unknown mode: $mode"
-		}
+            error "Unknown mode: $mode"
+        }
     }
 }
 
