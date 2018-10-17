@@ -1,5 +1,3 @@
-unbind dcc  n rehash		*dcc:rehash
-  bind dcc  T rehash		 dcc:rehash
   bind dcc  T s                  dcc:source
 unbind dcc  n tcl		*dcc:tcl
   bind dcc  T tcl		 dcc:tcl
@@ -15,6 +13,8 @@ unbind dcc  n tcl		*dcc:tcl
   bind dcc  T tcldoc            dcc:tcldoc
 
   bind dcc  T env       dcc:env
+
+  bind evnt - prerehash  evnt:prerehash
 
 #
 # Helpers methods
@@ -46,15 +46,6 @@ proc putdebug {{message d41d8cd98f00b204e98}} {
 #
 # Tech commands
 #
-
-#Disconnect SQL, then rehash (to prevent sql connect fatal errors)
-proc dcc:rehash {handle idx arg} {
-	catch {
-		sql disconnect
-		sql2 disconnect
-	}
-	*dcc:rehash $handle $idx $arg
-}
 
 #Loads a script
 proc dcc:source {handle idx arg} {
@@ -208,4 +199,15 @@ proc dcc:env {handle idx arg} {
     foreach "key value" $environment {
         putdcc $idx "[format %-[strlenmax $keys]s $key] $value"
     }
+}
+
+#
+# UNIX signals
+#
+
+proc evnt:prerehash {type} {
+	catch {
+		sql disconnect
+		sql2 disconnect
+	}
 }
