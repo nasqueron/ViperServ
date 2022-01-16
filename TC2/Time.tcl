@@ -32,7 +32,7 @@ proc cron:often {minute hour day month weekday} {
 	#Reconnects to sql, sql2
 	sqlrehash
 
-	#Sends a dummy command to keep sql7 alive
+	#Sends a no-op command to keep sql7 alive
 	if [catch {
 		sql7 "SELECT 666"
 	}] {
