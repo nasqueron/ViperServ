@@ -253,10 +253,15 @@ proc sqlrehash {} {
         sql  disconnect
         sql2 disconnect
     }
-    sql  connect  $sql(host) $sql(user) $sql(pass)
-    sql2 connect  $sql(host) $sql(user) $sql(pass)
+
+    set sql_credentials [dict get [vault_get mysql] data]
+
+    sql  connect  $sql(host) [dict get $sql_credentials username] [dict get $sql_credentials password]
+    sql2 connect  $sql(host) [dict get $sql_credentials username] [dict get $sql_credentials password]
     sql  selectdb $sql(database)
     sql2 selectdb $sql(database)
+
+    unset sql_credentials
 }
 
 #Escape a string to use as sql query parameter

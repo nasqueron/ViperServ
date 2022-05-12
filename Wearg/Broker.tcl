@@ -17,7 +17,7 @@ namespace eval broker {
 	}
 
 	proc connect {} {
-		mq connect [registry get broker.host] [registry get broker.user] [registry get broker.password] [registry get broker.vhost]
+		mq connect [registry get broker.host] [vault_get broker username] [vault_get broker password] [registry get broker.vhost]
 	}
 
 	proc is_timer_started {} {

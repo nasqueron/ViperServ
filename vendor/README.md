@@ -15,3 +15,4 @@ but are shipped under their own license.
 
   - bseen1.4.2.tcl - Bass's Seen - provides `!seen` command
   - proxycheck.tcl - Open proxy checker by James Seward (GPL)
+  - vault.tcl - Vault API client WIP to be integrated in tcllib (BSD-2-Clause)
