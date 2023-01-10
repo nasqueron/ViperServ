@@ -56,7 +56,7 @@ namespace eval broker {
 			while 1 {
 				if {[catch {set message [mq get $queue -noack]} brokerError]} {
 					if {[recover_from_broker_error $brokerError]} {
-						continue	
+						continue
 					} {
 						error $brokerError
 					}
