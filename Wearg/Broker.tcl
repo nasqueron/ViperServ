@@ -130,7 +130,7 @@ namespace eval broker {
 			}
 		}
 		if {$propagated == 0} {
-			putdebug "<$queue> [string range $message 0 32]..."
+			putdebug "\[Broker\] Not propagated: <$queue> [string range $message 0 64]..."
 		}
 	}
 }
