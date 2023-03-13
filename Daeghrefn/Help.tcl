@@ -29,7 +29,7 @@ proc dcc:help {handle idx arg} {
 
  \[ Bureautique ]    antidater postdater days paypal quux +db
  \[ Channel ]        botnet
- \[ Communication ]  sms mail twitter
+ \[ Communication ]  sms mail
  \[ GIS  ]           fantoir
  \[ Server ]         phpfpm
  \[ Tools ]          genpass strlen unixtime
