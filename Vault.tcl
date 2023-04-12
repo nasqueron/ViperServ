@@ -14,6 +14,9 @@ proc vault_get {property {key {}}} {
             vault_login
             return [::vault::readKV apps/viperserv/$property $key]
         }
+
+        # Errors like 503 if unsealed we can't recover easily, so propagate
+        error $err
     }
 
     return $credential
