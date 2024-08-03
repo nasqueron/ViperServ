@@ -79,7 +79,7 @@ proc getlocalfilename {filename} {
 }
 
 proc download {url} {
-	# Code from http://wiki.tcl.tk/12871 by Venkat Iyer and male.
+	# Code from http://wiki.tcl.tk/12871 by Venkat Iyer and Martin Lemburg.
 	set fd_remote [::http::geturl $url -binary 1]
 	set filename [getfilename $url $fd_remote]
 	set localpath [getlocalfilename $filename]
