@@ -336,7 +336,7 @@ namespace eval ::datacube {
             fill_cube_data_from_buffer db($idx)
             control_on_data_saved $idx
         } elseif {$text == "-"} {
-            control_abort $idx
+            control_stop $idx
             return 1
         } else {
             # Fill datacube
@@ -367,7 +367,7 @@ namespace eval ::datacube {
         }
     }
 
-    proc control_abort {idx} {
+    proc control_stop {idx} {
         global db
 
         unset db($idx)
