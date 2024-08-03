@@ -885,7 +885,7 @@ proc isip {string} {
 }
 
 ###
-### IP helper procedures
+### IP helper procedures
 ###
 
 # Extracts an IP address from a Freenode cloak
@@ -905,7 +905,7 @@ proc extract_addr_from_cloak {host} {
 }
 
 # Extracts an IP or hostname from an IRC host
-# If the host is a cloak not parseable, returns "".
+# If the host is a cloak not parseable, returns "".
 proc extract_addr {host} {
     if {[string first / $host] > -1} {
         return [extract_addr_from_cloak $host]

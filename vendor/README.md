@@ -6,7 +6,7 @@ The vendor/ category contains the code we don't manage.
 
 These are 3rd party scripts we import as is.
 
-### Licensing
+### Licensing
 
 These scripts don't follow our BSD-2-Clause licensing,
 but are shipped under their own license.

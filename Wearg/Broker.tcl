@@ -31,7 +31,7 @@ namespace eval broker {
 	# Determines if we're in a risk to receive a SIGCHLD while the broker intercepts signals
 	#
 	# @param time The specified unixtime, or the current one if omitted
-	# @return 1 if the risk is there, 0 if it shouldn't be risky
+	# @return 1 if the risk is there, 0 if it shouldn't be risky
 	proc near_SIGCHLD_arrival {{time ""}} {
 		if {$time == ""} {
 			set time [clock seconds]
@@ -44,7 +44,7 @@ namespace eval broker {
 		if {![near_SIGCHLD_arrival]} {
 			# We generally want to get messages, but not
 			# when the SIGCHLD signal is sent to the bot
-			# which seems to be every five minutes.
+			# which seems to be every five minutes.
 
 			get_messages
 		}

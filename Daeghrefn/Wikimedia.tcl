@@ -22,7 +22,7 @@ proc isWikidataChannel {chan} {
 }
 
 # Determines if the specified handle on the specified channel
-# is allowed to run a Wikidata comamnd.
+# is allowed to run a Wikidata comamnd.
 proc areWikidataCommandsAllowed {chan handle} {
 	if {[matchattr $handle D]} {
 		return 1
@@ -58,7 +58,7 @@ proc dcc:surname {handle idx arg} {
 }
 
 # Creates a surname
-# @param $title the item title
+# @param $title the item title
 # @param $state the state to pass to the create command callback (here with a mode and a target to print result)
 proc create_surname {title state} {
 	run_command "[get_external_script create_surname] [posix_escape $title]" print_command_callback print_python_error_callback $state
@@ -134,15 +134,15 @@ proc dcc:givenname {handle idx arg} {
 }
 
 # Creates a given name
-# @param $title the item title
+# @param $title the item title
 # @param $state the state to pass to the create command callback (here with a mode and a target to print result)
 proc create_givenname {title genre state} {
 	run_command "[get_external_script create_given_name] [posix_escape $title] $genre" print_command_callback print_python_error_callback $state
 }
 
 # Determines if the specified title is suitable to pass as shell argument
-# @param $title The title to check
-# @return 0 is the title is acceptable; otherwise, false.
+# @param $title The title to check
+# @return 0 is the title is acceptable; otherwise, false.
 proc isAcceptableItemTitle {title} {
 	set re {[A-Za-z \-']}
 	foreach char [split $title {}] {
