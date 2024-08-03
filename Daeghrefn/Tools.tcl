@@ -6,17 +6,17 @@ bind dcc - strlen    dcc:strlen
 bind dcc - unixtime  dcc:unixtime
 
 #
-# .genpass <master password> <domain name>
+# .genpass <main password> <domain name>
 # www.supergenpass.com/genpass legacy generator
 #
 
-proc genpass {master domain} {
-	string range [md5 "$master:$domain"] 0 7
+proc genpass {main domain} {
+	string range [md5 "$main:$domain"] 0 7
 }
 
 proc dcc:genpass {handle idx arg} {
 	if {[llength $arg] != 2} {
-		putdcc $idx "Usage: .genpass <master password> <domain name>"
+		putdcc $idx "Usage: .genpass <main password> <domain name>"
 	} {
 		putcmdlog "#$handle# genpass ..."
 		putdcc $idx [genpass [lindex $arg 0] [lindex $arg 1]]

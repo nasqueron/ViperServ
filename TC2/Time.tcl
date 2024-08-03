@@ -19,7 +19,7 @@ proc launch {} {
 	unloadmodule channels
 	unloadmodule server
 
-	#Links to master bot
+	#Links to primary bot
 	link Daeghrefn
 }
 
