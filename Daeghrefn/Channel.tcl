@@ -23,7 +23,7 @@ proc url:isvideo {url} {
 proc url:getvideotitle {url} {
 	set title ""
 	catch {
-		set title [exec -- youtube-dl --no-warnings -e $url]
+		set title [exec -- yt-dlp --no-warnings --remote-components ejs:npm -e --extractor-args "youtube:player_client=web" --extractor-args "youtube:visitor_data=[registry get video.youtube.visitor_data.tcl]" $url]
 	}
 	return $title
 }
