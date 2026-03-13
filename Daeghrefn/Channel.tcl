@@ -21,6 +21,10 @@ proc url:isvideo {url} {
 
 #Gets video title
 proc url:getvideotitle {url} {
+    # Ignore any query string arguments after the first
+    # Mitigate timeout issue when video extractor is called on a playlist
+    set url [lindex [split $url &] 0]
+
     set title ""
     catch {
         set title [exec -- yt-dlp --no-warnings --remote-components ejs:npm -e --extractor-args "youtube:player_client=web" --extractor-args "youtube:visitor_data=[registry get video.youtube.visitor_data.tcl]" $url]
