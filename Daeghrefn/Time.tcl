@@ -13,7 +13,7 @@ proc cron:minute {minute hour day month weekday} {
 
 #Every 5 minutes
 proc cron:often {minute hour day month weekday} {
-	sqlrehash
+    sqlrehash
 }
 
 #Every hour

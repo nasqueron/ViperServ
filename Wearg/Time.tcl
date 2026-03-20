@@ -6,16 +6,16 @@ bind cron - "?7 * * * *" cron:often
 #bind cron - "0 4 * * *" cron:daily
 
 proc onload {} {
-	::broker::init
-	::notifications::init
+    ::broker::init
+    ::notifications::init
 }
 
 #Every 5 minutes
 proc cron:often {minute hour day month weekday} {
-	#Reconnects to broker
-	if {[mq connected]} {
-		mq disconnect
-	}
+    #Reconnects to broker
+    if {[mq connected]} {
+        mq disconnect
+    }
 }
 
 #Every hour

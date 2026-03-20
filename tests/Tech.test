@@ -14,19 +14,19 @@ source $dir/Tech.tcl
 ###
 
 test should_log_tcl_command_for_legit_command {} -body {
-	should_log_tcl_command "quux"
+    should_log_tcl_command "quux"
 } -result 1
 
 test should_log_tcl_command_for_empty_command {} -body {
-	should_log_tcl_command ""
+    should_log_tcl_command ""
 } -result 1
 
 test should_log_tcl_command_for_sql_connect {} -body {
-	should_log_tcl_command "sql connect localhost root somepassword"
+    should_log_tcl_command "sql connect localhost root somepassword"
 } -result 0
 
 test should_log_tcl_command_for_genpass {} -body {
-	should_log_tcl_command "genpass somepassword somedomain.tld"
+    should_log_tcl_command "genpass somepassword somedomain.tld"
 } -result 0
 
 ###

@@ -11,17 +11,17 @@ bind dcc - unixtime  dcc:unixtime
 #
 
 proc genpass {main domain} {
-	string range [md5 "$main:$domain"] 0 7
+    string range [md5 "$main:$domain"] 0 7
 }
 
 proc dcc:genpass {handle idx arg} {
-	if {[llength $arg] != 2} {
-		putdcc $idx "Usage: .genpass <main password> <domain name>"
-	} {
-		putcmdlog "#$handle# genpass ..."
-		putdcc $idx [genpass [lindex $arg 0] [lindex $arg 1]]
-	}
-	return 0
+    if {[llength $arg] != 2} {
+        putdcc $idx "Usage: .genpass <main password> <domain name>"
+    } {
+        putcmdlog "#$handle# genpass ..."
+        putdcc $idx [genpass [lindex $arg 0] [lindex $arg 1]]
+    }
+    return 0
 }
 
 #
@@ -30,9 +30,9 @@ proc dcc:genpass {handle idx arg} {
 #
 
 proc dcc:strlen {handle idx arg} {
-	putdcc $idx [string length $arg]
-	putcmdlog "#$handle# strlen ..."
-	return 0
+    putdcc $idx [string length $arg]
+    putcmdlog "#$handle# strlen ..."
+    return 0
 }
 
 #
@@ -41,13 +41,13 @@ proc dcc:strlen {handle idx arg} {
 #
 
 proc dcc:unixtime {handle idx arg} {
-	if {$arg == ""} {
-		putdcc $idx [unixtime]
-	} elseif [isnumber $arg] {
-		putdcc $idx [clock format $arg -format "%Y-%m-%d %H:%M:%S"]
-	} {
-		if [catch {putdcc $idx [clock scan $arg]} err] {
-			putdcc $idx $err
-		}
-	}
+    if {$arg == ""} {
+        putdcc $idx [unixtime]
+    } elseif [isnumber $arg] {
+        putdcc $idx [clock format $arg -format "%Y-%m-%d %H:%M:%S"]
+    } {
+        if [catch {putdcc $idx [clock scan $arg]} err] {
+            putdcc $idx $err
+        }
+    }
 }

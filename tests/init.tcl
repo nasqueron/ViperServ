@@ -5,10 +5,10 @@ proc unbind {type flags cmdOrMask procname} {}
 # Tests config
 set dir [info script]
 if {$dir == ""} {
-	set dir [pwd]
-	append dir "/scripts"
+    set dir [pwd]
+    append dir "/scripts"
 } {
-	set dir [file dirname [file dirname [file normalize $dir]]]
+    set dir [file dirname [file dirname [file normalize $dir]]]
 }
 
 # Standard procedures

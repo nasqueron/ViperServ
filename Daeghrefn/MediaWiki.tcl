@@ -1,11 +1,11 @@
 # .tcl source scripts/Daeghrefn/MediaWiki.tcl
 #
-# MediaWiki RC 
+# MediaWiki RC
 #
 
 #
 # Configuration
-# 
+#
 set MediaWikiRC(source) 127.0.0.1
 set MediaWikiRC(port) 8676
 set MediaWikiRC(channel) #wolfplex
@@ -18,17 +18,17 @@ package require udp
 
 #Gets editor
 proc get_editor {message} {
-	set message [stripcodes abcgru $message]
-	regexp "\\* (.*?) \\*" $message match0 match1
-	if {![info exists match1]} {
-		return ""
-	}
-	return $match1
+    set message [stripcodes abcgru $message]
+    regexp "\\* (.*?) \\*" $message match0 match1
+    if {![info exists match1]} {
+        return ""
+    }
+    return $match1
 }
 
 #Checks if editor is known
 proc is_known_editor {editor} {
-	expr {$editor == "Dereckson" || $editor == "Spike"}
+    expr {$editor == "Dereckson" || $editor == "Spike"}
 }
 
 #Handles UDP event from $sock
@@ -39,14 +39,14 @@ proc mediawiki_rc_udp_event_handler {sock} {
     #Check if peer is source IP to avoid flood
     if {[string range $peer 0 [string length $MediaWikiRC(source)]-1] == $MediaWikiRC(source)} {
         #putdebug "Received on udp: $pkt"
-	#putdebug "Editor: [get_editor $pkt]"
+    #putdebug "Editor: [get_editor $pkt]"
         if {$MediaWikiRC(warnKnownEditorsChanges) || ![is_known_editor [get_editor $pkt]]} {
             if $MediaWikiRC(color) {
                 puthelp "PRIVMSG $MediaWikiRC(channel) :$pkt"
             } {
                 puthelp "PRIVMSG $MediaWikiRC(channel) :[stripcodes abcgru $pkt]"
             }
-        } 
+        }
     } {
             putdebug "$peer: [string length $pkt] {$pkt}"
     }
